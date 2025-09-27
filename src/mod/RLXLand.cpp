@@ -1,32 +1,32 @@
-#include "mod/MyMod.h"
+#include "mod/RLXLand.h"
 
 #include "ll/api/mod/RegisterHelper.h"
 
-namespace my_mod {
+namespace rlx_land {
 
-MyMod& MyMod::getInstance() {
-    static MyMod instance;
+RLXLand& RLXLand::getInstance() {
+    static RLXLand instance;
     return instance;
 }
 
-bool MyMod::load() {
+bool RLXLand::load() {
     getSelf().getLogger().debug("Loading...");
     // Code for loading the mod goes here.
     return true;
 }
 
-bool MyMod::enable() {
+bool RLXLand::enable() {
     getSelf().getLogger().debug("Enabling...");
     // Code for enabling the mod goes here.
     return true;
 }
 
-bool MyMod::disable() {
+bool RLXLand::disable() {
     getSelf().getLogger().debug("Disabling...");
     // Code for disabling the mod goes here.
     return true;
 }
 
-} // namespace my_mod
+} // namespace rlx_land
 
-LL_REGISTER_MOD(my_mod::MyMod, my_mod::MyMod::getInstance());
+LL_REGISTER_MOD(rlx_land::RLXLand, rlx_land::RLXLand::getInstance());

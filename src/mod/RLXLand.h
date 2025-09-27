@@ -2,14 +2,14 @@
 
 #include "ll/api/mod/NativeMod.h"
 
-namespace my_mod {
+namespace rlx_land {
 
-class MyMod {
+class RLXLand {
 
 public:
-    static MyMod& getInstance();
+    static RLXLand& getInstance();
 
-    MyMod() : mSelf(*ll::mod::NativeMod::current()) {}
+    RLXLand() : mSelf(*ll::mod::NativeMod::current()) {}
 
     [[nodiscard]] ll::mod::NativeMod& getSelf() const { return mSelf; }
 
@@ -30,4 +30,4 @@ private:
     ll::mod::NativeMod& mSelf;
 };
 
-} // namespace my_mod
+} // namespace rlx_land
