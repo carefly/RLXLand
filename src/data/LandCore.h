@@ -4,7 +4,7 @@
 #include <mc/deps/core/math/Vec3.h>
 #include <mc/world/actor/player/Player.h>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 using namespace std;
 
@@ -19,9 +19,10 @@ class SmallLandMap;
 
 class LandData {
 public:
-    int    x, z, dx, dz, d, perm;
-    LONG64 id;
-    string ownerXuid, memberXuids, description;
+    int            x, z, dx, dz, d, perm;
+    LONG64         id;
+    string         ownerXuid, description;
+    vector<string> memberXuids;
 };
 
 class LandInformation {
@@ -29,8 +30,7 @@ public:
     explicit LandInformation(LandData ld);
     LandData ld;
 
-    string                        ownerName;
-    unordered_map<string, string> members;
+    string ownerName;
 
     bool   hasPerm(Player* p);
     bool   isOwner(string xuid);

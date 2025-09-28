@@ -35,7 +35,7 @@ std::vector<LandData> RLXJsonLoader::loadLandsFromFile(const std::string& filePa
             land.d           = item.value("d", 0);
             land.perm        = item.value("perm", 0);
             land.ownerXuid   = item.value("ownerXuid", "");
-            land.memberXuids = item.value("memberXuids", "");
+            land.memberXuids = item.value("memberXuids", std::vector<std::string>());
             land.description = item.value("description", "");
             land.id          = item.value("id", 0LL);
 
@@ -65,7 +65,7 @@ std::vector<TownData> RLXJsonLoader::loadTownsFromFile(const std::string& filePa
             town.id          = item.value("id", 0LL);
             town.name        = item.value("name", "");
             town.mayorXuid   = item.value("mayorXuid", "");
-            town.memberXuids = item.value("memberXuids", "");
+            town.memberXuids = item.value("memberXuids", std::vector<std::string>());
             town.perm        = item.value("perm", 0);
             town.x           = item.value("x", 0);
             town.z           = item.value("z", 0);

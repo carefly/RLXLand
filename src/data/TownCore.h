@@ -5,6 +5,7 @@
 #include <mc/world/actor/player/Player.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ public:
     long long id;
     string    name;
     string    mayorXuid;
-    string    memberXuids;
+    vector<string> memberXuids;
     int       perm;
     int       x, z, dx, dz, d;
     string    description;

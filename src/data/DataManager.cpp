@@ -7,9 +7,6 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
-#include <sstream>
-
-
 
 static shared_ptr<DataManager> instance = nullptr;
 static std::mutex              instanceMutex;
@@ -24,34 +21,9 @@ shared_ptr<DataManager> DataManager::getInstance() {
     return instance;
 }
 
-// 辅助函数：将逗号分隔的字符串解析为vector
-std::vector<std::string> parseMemberXuids(const std::string& memberXuidsStr) {
-    std::vector<std::string> members;
-    if (!memberXuidsStr.empty()) {
-        std::stringstream ss(memberXuidsStr);
-        std::string       item;
-        while (std::getline(ss, item, ',')) {
-            if (!item.empty()) {
-                members.push_back(item);
-            }
-        }
-    }
-    return members;
-}
-
-// 辅助函数：将vector转换为逗号分隔的字符串
-std::string generateMemberXuidsStr(const std::vector<std::string>& members) {
-    std::string result;
-    for (size_t i = 0; i < members.size(); ++i) {
-        if (i > 0) result += ",";
-        result += members[i];
-    }
-    return result;
-}
-
 LONG64 DataManager::getLandMaxId() {
     LONG64 max = 0;
-    for (const auto& landInfo : landInformationList) {
+    for (const auto& landInfo : getInstance()->landInformationList) {
         if (max < landInfo->ld.id) max = landInfo->ld.id;
     }
 
@@ -79,7 +51,6 @@ void DataManager::loadLands() {
         auto li = new LandInformation(land);
 
         li->ownerName = LeviLaminaAPI::getPlayerNameByXuid(land.ownerXuid);
-        li->members   = getLandMember(land.memberXuids);
 
         this->landInformationList.push_back(li);
 
@@ -108,7 +79,7 @@ void DataManager::createLand(LandData data) {
     auto li = new LandInformation(data);
 
     li->ownerName = LeviLaminaAPI::getPlayerNameByXuid(data.ownerXuid);
-    li->members   = getLandMember(data.memberXuids);
+
     this->landInformationList.push_back(li);
 
     for (LONG64 x = data.x; x <= data.dx; x++) {
@@ -169,18 +140,13 @@ void DataManager::addLandMember(LandInformation* li, const string& playerName) {
     string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw LandMemberException("Player not found: " + playerName);
 
-    // 解析现有的成员列表
-    vector<string> memberXuids = parseMemberXuids(li->ld.memberXuids);
-
     // 检查玩家是否已经是成员
-    if (find(memberXuids.begin(), memberXuids.end(), xuid) != memberXuids.end()) {
+    if (find(li->ld.memberXuids.begin(), li->ld.memberXuids.end(), xuid) != li->ld.memberXuids.end()) {
         throw LandMemberException("Player is already a member: " + playerName);
     }
 
     // 添加新成员
-    memberXuids.push_back(xuid);
-    li->ld.memberXuids = generateMemberXuidsStr(memberXuids);
-    li->members[xuid]  = playerName;
+    li->ld.memberXuids.push_back(xuid);
 
     std::vector<LandData> lands =
         rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
@@ -199,20 +165,13 @@ void DataManager::removeLandMember(LandInformation* li, const string& playerName
     string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw LandMemberException("Player not found: " + playerName);
 
-    // 解析现有的成员列表
-    vector<string> memberXuids = parseMemberXuids(li->ld.memberXuids);
-
     // 查找并移除成员
-    auto it = find(memberXuids.begin(), memberXuids.end(), xuid);
-    if (it == memberXuids.end()) {
+    auto it = find(li->ld.memberXuids.begin(), li->ld.memberXuids.end(), xuid);
+    if (it == li->ld.memberXuids.end()) {
         throw LandMemberException("Player is not a member: " + playerName);
     }
 
-    memberXuids.erase(it);
-
-    // 更新成员列表字符串
-    li->ld.memberXuids = generateMemberXuidsStr(memberXuids);
-    li->members.erase(xuid);
+    li->ld.memberXuids.erase(it);
 
     std::vector<LandData> lands =
         rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);

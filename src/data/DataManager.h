@@ -1,5 +1,8 @@
 #pragma once
 #include <memory>
+#include <vector>
+#include <unordered_map>
+#include <string>
 
 #include "LandCore.h"
 
@@ -16,12 +19,12 @@ public:
     void addLandMember(LandInformation* li, const string& playerName);
     void removeLandMember(LandInformation* li, const string& playerName);
 
-    LONG64 getLandMaxId();
+    static LONG64 getLandMaxId();
 
 private:
     DataManager();
 
-    unordered_map<string, string> getLandMember(string line);
+    unordered_map<string, string> getLandMember(vector<string> xuids);
 
     std::vector<LandInformation*> landInformationList;
 };
