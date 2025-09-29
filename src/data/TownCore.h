@@ -7,6 +7,10 @@
 
 namespace rlx_land {
 
+#define TOWN_BIG_SIZE    100000
+#define TOWN_MIDDLE_SIZE 10000
+#define TOWN_SMALL_SIZE  100
+
 class BigTownMap;
 class MiddleTownMap;
 class SmallTownMap;
@@ -35,9 +39,6 @@ public:
     [[nodiscard]] std::string getMembers() const;
 };
 
-#define TOWN_BIG_SIZE    100000
-#define TOWN_MIDDLE_SIZE 10000
-#define TOWN_SMALL_SIZE  100
 
 class SmallTownMap {
 public:
@@ -98,8 +99,9 @@ public:
 
     BigTownMap* map[20][20][3];
 
-    TownInformation* find(LONG64 coordx, LONG64 coordy, int d);
-    void             set(TownInformation* ti, LONG64 xi, LONG64 zi, int d);
+    TownInformation* find(LONG64 coordx, LONG64 coordz, int d);
+
+    void set(TownInformation* ti, LONG64 xi, LONG64 zi, int d);
 };
 
 } // namespace rlx_land

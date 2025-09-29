@@ -95,12 +95,13 @@ private:
 };
 
 class LandMap {
+
 public:
     static std::shared_ptr<LandMap> getInstance();
 
     BigLandMap* map[20][20][3];
 
-    LandInformation* find(LONG64 coordx, LONG64 coordy, int d);
+    LandInformation* find(LONG64 coordx, LONG64 coordz, int d);
 
     void set(LandInformation* li, LONG64 xi, LONG64 zi, int d);
 };
