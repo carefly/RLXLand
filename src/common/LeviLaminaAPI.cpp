@@ -1,4 +1,3 @@
-
 #include <ll/api/service/Bedrock.h>
 #include <mc/world/actor/player/Player.h>
 #include <mc/world/level/Level.h>
@@ -39,7 +38,7 @@ Player* LeviLaminaAPI::getPlayerByName(std::string name) {
 std::string LeviLaminaAPI::getPlayerNameByXuid(std::string xuid) {
     Player* foundPlayer = getPlayerByXuid(std::move(xuid));
     if (foundPlayer) {
-        return {foundPlayer->mName};
+        return std::string(foundPlayer->mName);
     }
     return {};
 }
@@ -47,7 +46,7 @@ std::string LeviLaminaAPI::getPlayerNameByXuid(std::string xuid) {
 std::string LeviLaminaAPI::getXuidByPlayerName(std::string name) {
     Player* foundPlayer = getPlayerByName(std::move(name));
     if (foundPlayer) {
-        return {foundPlayer->getXuid()};
+        return std::string(foundPlayer->getXuid());
     }
     return {};
 }

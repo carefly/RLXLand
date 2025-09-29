@@ -34,7 +34,7 @@ public:
     [[nodiscard]] bool hasBasicPermission(const std::string& xuid) const;
     [[nodiscard]] bool isOwner(const std::string& xuid) const;
 
-    std::string getMembers();
+    [[nodiscard]] std::string getMembers() const;
 };
 
 class SmallLandMap {

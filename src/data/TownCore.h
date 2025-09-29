@@ -29,10 +29,10 @@ public:
 
     std::string mayorName;
 
-    bool hasMember(std::string xuid);
-    bool isMayor(std::string xuid);
+    [[nodiscard]] bool hasBasicPermission(const std::string& xuid) const;
+    [[nodiscard]] bool isMayor(const std::string& xuid) const;
 
-    std::string getMembers();
+    [[nodiscard]] std::string getMembers() const;
 };
 
 #define TOWN_BIG_SIZE    100000

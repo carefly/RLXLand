@@ -6,14 +6,12 @@
 #include <vector>
 
 
-
 namespace rlx_land {
 
 class DataManager {
 public:
     static std::shared_ptr<DataManager> getInstance();
 
-    DataManager() = default;
 
     void loadLands();
     void createLand(LandData data);
