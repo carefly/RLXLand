@@ -1,11 +1,12 @@
 #include "DataManager.h"
 #include "LandCore.h"
+#include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
-#include "common/RLXJsonLoader.h"
 #include "common/exceptions/LandExceptions.h"
 #include "mod/RLXLand.h"
 #include <algorithm>
 #include <memory>
+
 
 namespace rlx_land {
 
@@ -25,7 +26,7 @@ LONG64 DataManager::getLandMaxId() {
 
 void DataManager::loadLands() {
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     rlx_land::RLXLand::getInstance().getSelf().getLogger().info(std::format("load {} lands from JSON", lands.size()));
 
@@ -55,7 +56,7 @@ void DataManager::loadLands() {
 
 void DataManager::createLand(LandData data) {
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&data](const LandData& l) { return l.id == data.id; });
 
@@ -65,7 +66,7 @@ void DataManager::createLand(LandData data) {
 
     lands.push_back(data);
 
-    rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
+    rlx_land::JsonLoader::saveLandsToFile(rlx_land::JsonLoader::LANDS_JSON_PATH, lands);
 
     auto li = new LandInformation(data);
 
@@ -90,7 +91,7 @@ void DataManager::deleteLand(LandData data) {
         landInformationList.erase(infoIt);
     }
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&data](const LandData& l) { return l.id == data.id; });
 
@@ -100,7 +101,7 @@ void DataManager::deleteLand(LandData data) {
 
     lands.erase(it);
 
-    rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
+    rlx_land::JsonLoader::saveLandsToFile(rlx_land::JsonLoader::LANDS_JSON_PATH, lands);
 
     for (LONG64 xi = data.x; xi <= data.dx; xi++)
         for (LONG64 zi = data.z; zi <= data.dz; zi++) {
@@ -113,13 +114,13 @@ void DataManager::modifyLandPerm(LandInformation* li, int perm) {
 
     li->ld.perm = perm;
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it != lands.end()) {
         it->perm = perm;
-        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::JsonLoader::saveLandsToFile(rlx_land::JsonLoader::LANDS_JSON_PATH, lands);
     }
 }
 
@@ -137,13 +138,13 @@ void DataManager::addLandMember(LandInformation* li, const std::string& playerNa
     // 添加新成员
     li->ld.memberXuids.push_back(xuid);
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it != lands.end()) {
         it->memberXuids = li->ld.memberXuids;
-        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::JsonLoader::saveLandsToFile(rlx_land::JsonLoader::LANDS_JSON_PATH, lands);
     }
 }
 
@@ -161,13 +162,13 @@ void DataManager::removeLandMember(LandInformation* li, const std::string& playe
 
     li->ld.memberXuids.erase(it);
 
-    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::JsonLoader::loadLandsFromFile(rlx_land::JsonLoader::LANDS_JSON_PATH);
 
     auto it2 = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it2 != lands.end()) {
         it2->memberXuids = li->ld.memberXuids;
-        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::JsonLoader::saveLandsToFile(rlx_land::JsonLoader::LANDS_JSON_PATH, lands);
     }
 }
 

@@ -1,4 +1,4 @@
-#include "common/RLXJsonLoader.h"
+#include "common/JsonLoader.h"
 #include "data/LandCore.h"
 #include "data/TownCore.h"
 #include "mod/RLXLand.h"
@@ -8,11 +8,10 @@
 
 namespace rlx_land {
 
-const std::string RLXJsonLoader::TOWNS_JSON_PATH = "data/towns.json";
-const std::string RLXJsonLoader::LANDS_JSON_PATH = "data/lands.json";
+const std::string JsonLoader::TOWNS_JSON_PATH = "data/towns.json";
+const std::string JsonLoader::LANDS_JSON_PATH = "data/lands.json";
 
-
-std::vector<LandData> RLXJsonLoader::loadLandsFromFile(const std::string& filePath) {
+std::vector<LandData> JsonLoader::loadLandsFromFile(const std::string& filePath) {
     std::vector<LandData> lands;
 
     std::ifstream file(filePath);
@@ -46,7 +45,7 @@ std::vector<LandData> RLXJsonLoader::loadLandsFromFile(const std::string& filePa
     return lands;
 }
 
-std::vector<TownData> RLXJsonLoader::loadTownsFromFile(const std::string& filePath) {
+std::vector<TownData> JsonLoader::loadTownsFromFile(const std::string& filePath) {
     std::vector<TownData> towns;
 
     std::ifstream file(filePath);
@@ -81,7 +80,7 @@ std::vector<TownData> RLXJsonLoader::loadTownsFromFile(const std::string& filePa
     return towns;
 }
 
-void RLXJsonLoader::saveLandsToFile(const std::string& filePath, const std::vector<LandData>& lands) {
+void JsonLoader::saveLandsToFile(const std::string& filePath, const std::vector<LandData>& lands) {
     nlohmann::json json;
 
     for (const auto& land : lands) {
@@ -107,7 +106,7 @@ void RLXJsonLoader::saveLandsToFile(const std::string& filePath, const std::vect
     }
 }
 
-void RLXJsonLoader::saveTownsToFile(const std::string& filePath, const std::vector<TownData>& towns) {
+void JsonLoader::saveTownsToFile(const std::string& filePath, const std::vector<TownData>& towns) {
     nlohmann::json json;
 
     for (const auto& town : towns) {

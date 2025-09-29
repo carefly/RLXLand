@@ -9,7 +9,7 @@ namespace rlx_land {
 class LandData;
 class TownData;
 
-class RLXJsonLoader {
+class JsonLoader {
 public:
     static const std::string TOWNS_JSON_PATH;
     static const std::string LANDS_JSON_PATH;
