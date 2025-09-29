@@ -6,7 +6,7 @@
 #include <ll/api/io/Logger.h>
 
 
-namespace rlx_json_loader {
+namespace rlx_land {
 
 const std::string RLXJsonLoader::TOWNS_JSON_PATH = "data/towns.json";
 const std::string RLXJsonLoader::LANDS_JSON_PATH = "data/lands.json";
@@ -134,4 +134,4 @@ void RLXJsonLoader::saveTownsToFile(const std::string& filePath, const std::vect
     }
 }
 
-} // namespace rlx_json_loader
+} // namespace rlx_land

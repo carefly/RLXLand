@@ -1,17 +1,19 @@
 #pragma once
 
-#include "mc/world/actor/player/Player.h"
-#include <mc/server/ServerPlayer.h>
 #include <string>
+class Player;
 
-using namespace std;
+namespace rlx_land {
+
 
 class LeviLaminaAPI {
 
 public:
-    static Player* getPlayerByXuid(string xuid);
-    static Player* getPlayerByName(string name);
+    static Player* getPlayerByXuid(std::string xuid);
+    static Player* getPlayerByName(std::string name);
 
-    static string getPlayerNameByXuid(string xuid);
-    static string getXuidByPlayerName(string name);
+    static std::string getPlayerNameByXuid(std::string xuid);
+    static std::string getXuidByPlayerName(std::string name);
 };
+
+} // namespace rlx_land

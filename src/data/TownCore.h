@@ -1,13 +1,11 @@
 #pragma once
 
 #include <basetsd.h>
-#include <mc/deps/core/math/Vec3.h>
-#include <mc/world/actor/player/Player.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-using namespace std;
+namespace rlx_land {
 
 class BigTownMap;
 class MiddleTownMap;
@@ -15,13 +13,13 @@ class SmallTownMap;
 
 class TownData {
 public:
-    long long id;
-    string    name;
-    string    mayorXuid;
-    vector<string> memberXuids;
-    int       perm;
-    int       x, z, dx, dz, d;
-    string    description;
+    long long                id;
+    std::string              name;
+    std::string              mayorXuid;
+    std::vector<std::string> memberXuids;
+    int                      perm;
+    int                      x, z, dx, dz, d;
+    std::string              description;
 };
 
 class TownInformation {
@@ -29,11 +27,12 @@ public:
     explicit TownInformation(TownData td);
     TownData td;
 
-    string mayorName;
+    std::string mayorName;
 
-    bool   hasMember(string xuid);
-    bool   isMayor(string xuid);
-    string getMembers();
+    bool hasMember(std::string xuid);
+    bool isMayor(std::string xuid);
+
+    std::string getMembers();
 };
 
 #define TOWN_BIG_SIZE    100000
@@ -95,10 +94,12 @@ private:
 
 class TownMap {
 public:
-    static shared_ptr<TownMap> getInstance();
+    static std::shared_ptr<TownMap> getInstance();
 
     BigTownMap* map[20][20][3];
 
     TownInformation* find(LONG64 coordx, LONG64 coordy, int d);
     void             set(TownInformation* ti, LONG64 xi, LONG64 zi, int d);
 };
+
+} // namespace rlx_land

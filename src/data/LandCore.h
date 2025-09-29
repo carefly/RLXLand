@@ -1,12 +1,11 @@
 #pragma once
 
 #include <basetsd.h>
-#include <mc/deps/core/math/Vec3.h>
-#include <mc/world/actor/player/Player.h>
+#include <memory>
 #include <string>
 #include <vector>
 
-using namespace std;
+namespace rlx_land {
 
 #define LAND_BIG_SIZE    100000
 #define LAND_MIDDLE_SIZE 10000
@@ -19,10 +18,10 @@ class SmallLandMap;
 
 class LandData {
 public:
-    int            x, z, dx, dz, d, perm;
-    LONG64         id;
-    string         ownerXuid, description;
-    vector<string> memberXuids;
+    int                      x, z, dx, dz, d, perm;
+    LONG64                   id;
+    std::string              ownerXuid, description;
+    std::vector<std::string> memberXuids;
 };
 
 class LandInformation {
@@ -30,11 +29,12 @@ public:
     explicit LandInformation(LandData ld);
     LandData ld;
 
-    string ownerName;
+    std::string ownerName;
 
-    bool   hasPerm(Player* p);
-    bool   isOwner(string xuid);
-    string getMembers();
+    [[nodiscard]] bool hasBasicPermission(const std::string& xuid) const;
+    [[nodiscard]] bool isOwner(const std::string& xuid) const;
+
+    std::string getMembers();
 };
 
 class SmallLandMap {
@@ -96,7 +96,7 @@ private:
 
 class LandMap {
 public:
-    static shared_ptr<LandMap> getInstance();
+    static std::shared_ptr<LandMap> getInstance();
 
     BigLandMap* map[20][20][3];
 
@@ -104,3 +104,5 @@ public:
 
     void set(LandInformation* li, LONG64 xi, LONG64 zi, int d);
 };
+
+} // namespace rlx_land

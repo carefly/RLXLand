@@ -6,18 +6,11 @@
 #include "mod/RLXLand.h"
 #include <algorithm>
 #include <memory>
-#include <mutex>
 
-static shared_ptr<DataManager> instance = nullptr;
-static std::mutex              instanceMutex;
+namespace rlx_land {
 
-shared_ptr<DataManager> DataManager::getInstance() {
-    if (instance == nullptr) {
-        std::lock_guard<std::mutex> lock(instanceMutex);
-        if (instance == nullptr) {
-            instance = make_shared<DataManager>();
-        }
-    }
+std::shared_ptr<DataManager> DataManager::getInstance() {
+    static std::shared_ptr<DataManager> instance = std::make_shared<DataManager>();
     return instance;
 }
 
@@ -32,10 +25,9 @@ LONG64 DataManager::getLandMaxId() {
 
 void DataManager::loadLands() {
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
-    rlx_land::RLXLand::getInstance().getSelf().getLogger().info(format("load {} lands from JSON", lands.size()));
+    rlx_land::RLXLand::getInstance().getSelf().getLogger().info(std::format("load {} lands from JSON", lands.size()));
 
     for (const auto& land : lands) {
         LONG64 x1 = land.x;
@@ -63,8 +55,7 @@ void DataManager::loadLands() {
 
 void DataManager::createLand(LandData data) {
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&data](const LandData& l) { return l.id == data.id; });
 
@@ -74,7 +65,7 @@ void DataManager::createLand(LandData data) {
 
     lands.push_back(data);
 
-    rlx_json_loader::RLXJsonLoader::saveLandsToFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH, lands);
+    rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
 
     auto li = new LandInformation(data);
 
@@ -99,8 +90,7 @@ void DataManager::deleteLand(LandData data) {
         landInformationList.erase(infoIt);
     }
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&data](const LandData& l) { return l.id == data.id; });
 
@@ -110,7 +100,7 @@ void DataManager::deleteLand(LandData data) {
 
     lands.erase(it);
 
-    rlx_json_loader::RLXJsonLoader::saveLandsToFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH, lands);
+    rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
 
     for (LONG64 xi = data.x; xi <= data.dx; xi++)
         for (LONG64 zi = data.z; zi <= data.dz; zi++) {
@@ -123,21 +113,20 @@ void DataManager::modifyLandPerm(LandInformation* li, int perm) {
 
     li->ld.perm = perm;
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it != lands.end()) {
         it->perm = perm;
-        rlx_json_loader::RLXJsonLoader::saveLandsToFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
     }
 }
 
-void DataManager::addLandMember(LandInformation* li, const string& playerName) {
+void DataManager::addLandMember(LandInformation* li, const std::string& playerName) {
     if (li == nullptr) throw LandNotFoundException("Land not found");
 
-    string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw LandMemberException("Player not found: " + playerName);
 
     // 检查玩家是否已经是成员
@@ -148,21 +137,20 @@ void DataManager::addLandMember(LandInformation* li, const string& playerName) {
     // 添加新成员
     li->ld.memberXuids.push_back(xuid);
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
     auto it = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it != lands.end()) {
         it->memberXuids = li->ld.memberXuids;
-        rlx_json_loader::RLXJsonLoader::saveLandsToFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
     }
 }
 
-void DataManager::removeLandMember(LandInformation* li, const string& playerName) {
+void DataManager::removeLandMember(LandInformation* li, const std::string& playerName) {
     if (li == nullptr) throw LandNotFoundException("Land not found");
 
-    string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw LandMemberException("Player not found: " + playerName);
 
     // 查找并移除成员
@@ -173,13 +161,14 @@ void DataManager::removeLandMember(LandInformation* li, const string& playerName
 
     li->ld.memberXuids.erase(it);
 
-    std::vector<LandData> lands =
-        rlx_json_loader::RLXJsonLoader::loadLandsFromFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH);
+    std::vector<LandData> lands = rlx_land::RLXJsonLoader::loadLandsFromFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH);
 
     auto it2 = std::find_if(lands.begin(), lands.end(), [&li](const LandData& l) { return l.id == li->ld.id; });
 
     if (it2 != lands.end()) {
         it2->memberXuids = li->ld.memberXuids;
-        rlx_json_loader::RLXJsonLoader::saveLandsToFile(rlx_json_loader::RLXJsonLoader::LANDS_JSON_PATH, lands);
+        rlx_land::RLXJsonLoader::saveLandsToFile(rlx_land::RLXJsonLoader::LANDS_JSON_PATH, lands);
     }
 }
+
+} // namespace rlx_land

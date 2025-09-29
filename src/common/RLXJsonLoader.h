@@ -4,10 +4,11 @@
 #include <vector>
 
 
+namespace rlx_land {
+
 class LandData;
 class TownData;
 
-namespace rlx_json_loader {
 class RLXJsonLoader {
 public:
     static const std::string TOWNS_JSON_PATH;
@@ -19,4 +20,5 @@ public:
     static void saveLandsToFile(const std::string& filePath, const std::vector<LandData>& lands);
     static void saveTownsToFile(const std::string& filePath, const std::vector<TownData>& towns);
 };
-} // namespace rlx_json_loader
+
+} // namespace rlx_land
