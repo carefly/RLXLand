@@ -121,20 +121,20 @@ void LandCommands::registerCommands() {
             }
             auto* sp        = static_cast<Player*>(entity);
             auto  xuid      = sp->getXuid();
-            auto  opeartion = param.Operation;
+            auto  operation = param.Operation;
 
-            if (LandCommandBasicOperation::a == opeartion) {
+            if (LandCommandBasicOperation::a == operation) {
                 landBuyState[xuid] = LandBuyState::A;
                 output.success("点击方块选择领地A点");
-            } else if (LandCommandBasicOperation::b == opeartion) {
+            } else if (LandCommandBasicOperation::b == operation) {
                 landBuyState[xuid] = LandBuyState::B;
                 output.success("点击方块选择领地B点");
-            } else if (LandCommandBasicOperation::exit == opeartion) {
+            } else if (LandCommandBasicOperation::exit == operation) {
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
                 landBuyB.erase(xuid);
                 output.success("退出领地选择模式");
-            } else if (LandCommandBasicOperation::buy == opeartion) {
+            } else if (LandCommandBasicOperation::buy == operation) {
                 auto ita = landBuyA.find(xuid);
                 auto itb = landBuyB.find(xuid);
 
@@ -152,10 +152,10 @@ void LandCommands::registerCommands() {
 
                 int area = (dx - x) * (dz - z);
 
-                // 检查是否超出LAND_RANGE范围
-                if (x >= LAND_RANGE || x <= -LAND_RANGE || dx >= LAND_RANGE || dx <= -LAND_RANGE || z >= LAND_RANGE
-                    || z <= -LAND_RANGE || dz >= LAND_RANGE || dz <= -LAND_RANGE) {
-                    output.error(format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
+                // 检查是否超出LAND_LIMIT范围
+                if (x >= LAND_LIMIT || x <= -LAND_LIMIT || dx >= LAND_LIMIT || dx <= -LAND_LIMIT || z >= LAND_LIMIT
+                    || z <= -LAND_LIMIT || dz >= LAND_LIMIT || dz <= -LAND_LIMIT) {
+                    output.error(format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_LIMIT));
                     return;
                 }
 
@@ -166,12 +166,15 @@ void LandCommands::registerCommands() {
 
                 // 添加Town权限检查逻辑（符合原始设计意图）
                 bool canClaim = true;
-                // 简单检查几个关键点是否可以圈地
-                if (!TownPermissionChecker::canClaimLand(sp, x, z, d)
-                    || !TownPermissionChecker::canClaimLand(sp, dx, dz, d)
-                    || !TownPermissionChecker::canClaimLand(sp, x, dz, d)
-                    || !TownPermissionChecker::canClaimLand(sp, dx, z, d)) {
-                    canClaim = false;
+                // 检查整个领地区域是否可以圈地（确保所有坐标点都有权限）
+                for (int xi = x; xi <= dx; xi++) {
+                    for (int zi = z; zi <= dz; zi++) {
+                        if (!TownPermissionChecker::canClaimLand(sp, xi, zi, d)) {
+                            canClaim = false;
+                            break;
+                        }
+                    }
+                    if (!canClaim) break;
                 }
 
                 if (!canClaim) {
@@ -214,7 +217,7 @@ void LandCommands::registerCommands() {
                 DataManager::getInstance()->createLand(data);
 
                 output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
-            } else if (LandCommandBasicOperation::sell == opeartion) {
+            } else if (LandCommandBasicOperation::sell == operation) {
                 auto pos = sp->getPosition();
                 auto li  = LandMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
@@ -226,7 +229,7 @@ void LandCommands::registerCommands() {
                 // RLXMoney::getInstance().addMoney(li->ld.ownerXuid, pay);
                 DataManager::getInstance()->deleteLand(li->ld);
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
-            } else if (LandCommandBasicOperation::query == opeartion) {
+            } else if (LandCommandBasicOperation::query == operation) {
                 auto pos  = sp->getPosition();
                 auto li   = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
                 auto town = Town::getInstance().getTownAt(pos, sp->getDimensionId());
