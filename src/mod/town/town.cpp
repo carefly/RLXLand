@@ -1,7 +1,9 @@
 #include "town.h"
 #include "commands/TownCommands.h"
+#include "data/SpatialMap.h"
 #include "data/TownCore.h"
 #include "mod/RLXLand.h"
+
 
 
 #include <basetsd.h>

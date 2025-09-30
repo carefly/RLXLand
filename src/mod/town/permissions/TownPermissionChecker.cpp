@@ -1,6 +1,8 @@
 #include "TownPermissionChecker.h"
+#include "data/SpatialMap.h"
 #include "data/TownCore.h"
 #include "service/PermissionService.h"
+
 
 
 #include <basetsd.h>

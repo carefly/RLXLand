@@ -1,8 +1,8 @@
 #include "LandPermissionChecker.h"
 #include "data/LandCore.h"
+#include "data/SpatialMap.h"
 #include "data/TownCore.h"
 #include "service/PermissionService.h"
-
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>

@@ -1,11 +1,16 @@
 #include "DataManager.h"
 #include "LandCore.h"
+#include "SpatialMap.h" // 为LandMap和TownMap类型别名提供定义
+#include "TownCore.h"
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "mod/RLXLand.h"
 #include <algorithm>
 #include <memory>
+
+#define LAND_RANGE 1000000
+
 
 namespace rlx_land {
 

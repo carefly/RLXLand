@@ -5,6 +5,7 @@
 #include "common/exceptions/LandExceptions.h"
 #include "data/DataManager.h"
 #include "data/LandCore.h"
+#include "data/SpatialMap.h"
 #include "service/PermissionService.h"
 
 
