@@ -2,17 +2,22 @@
 #include <stdexcept>
 #include <string>
 
+class PlayerNotFoundException : public std::runtime_error {
+public:
+    explicit PlayerNotFoundException(const std::string& message) : std::runtime_error(message) {}
+};
+
 class LandNotFoundException : public std::runtime_error {
 public:
     explicit LandNotFoundException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandDuplicateException : public std::runtime_error {
+class DuplicateException : public std::runtime_error {
 public:
-    explicit LandDuplicateException(const std::string& message) : std::runtime_error(message) {}
+    explicit DuplicateException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandMemberException : public std::runtime_error {
+class NotMemberException : public std::runtime_error {
 public:
-    explicit LandMemberException(const std::string& message) : std::runtime_error(message) {}
+    explicit NotMemberException(const std::string& message) : std::runtime_error(message) {}
 };
