@@ -50,7 +50,7 @@ using namespace std;
 
 namespace rlx_land {
 
-#define LAND_LIMIT 100000
+#define LAND_RANGE 1000000
 
 enum LandPerm : int {
     PERM_NULL           = 0,
@@ -152,15 +152,15 @@ void LandCommands::registerCommands() {
 
                 int area = (dx - x) * (dz - z);
 
-                // 检查是否超出LAND_LIMIT范围
-                if (x >= LAND_LIMIT || x <= -LAND_LIMIT || dx >= LAND_LIMIT || dx <= -LAND_LIMIT || z >= LAND_LIMIT
-                    || z <= -LAND_LIMIT || dz >= LAND_LIMIT || dz <= -LAND_LIMIT) {
-                    output.error(format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_LIMIT));
+                // 检查是否超出LAND_RANGE范围
+                if (x >= LAND_RANGE || x <= -LAND_RANGE || dx >= LAND_RANGE || dx <= -LAND_RANGE || z >= LAND_RANGE
+                    || z <= -LAND_RANGE || dz >= LAND_RANGE || dz <= -LAND_RANGE) {
+                    output.error(format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
                     return;
                 }
 
-                if ((abs(x) > LAND_LIMIT) || (abs(z) > LAND_LIMIT)) {
-                    output.error(format("领地不能超过 {} 格", LAND_LIMIT));
+                if ((abs(x) > LAND_RANGE) || (abs(z) > LAND_RANGE)) {
+                    output.error(format("领地不能超过 {} 格", LAND_RANGE));
                     return;
                 }
 
@@ -277,10 +277,10 @@ void LandCommands::registerCommands() {
             }
             auto* sp         = static_cast<Player*>(entity);
             auto  xuid       = sp->getXuid();
-            auto  opeartion  = param.Operation;
+            auto  operation  = param.Operation;
             auto  playerName = param.Name.mText;
 
-            if (LandCommandTrustOperation::trust == opeartion) {
+            if (LandCommandTrustOperation::trust == operation) {
 
                 auto pos = sp->getPosition();
                 auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
@@ -309,7 +309,7 @@ void LandCommands::registerCommands() {
 
                 output.success(format("成功添加玩家 {} 为领地成员", playerName));
 
-            } else if (LandCommandTrustOperation::untrust == opeartion) {
+            } else if (LandCommandTrustOperation::untrust == operation) {
                 auto pos = sp->getPosition();
                 auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
 
@@ -347,10 +347,10 @@ void LandCommands::registerCommands() {
             }
             auto* sp        = static_cast<Player*>(entity);
             auto  xuid      = sp->getXuid();
-            auto  opeartion = param.Operation;
+            auto  operation = param.Operation;
             auto  perm_num  = param.Perm;
 
-            if (LandCommandPermOperation::perm == opeartion) {
+            if (LandCommandPermOperation::perm == operation) {
                 auto pos = sp->getPosition();
                 auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
 
