@@ -1,6 +1,6 @@
 #include "Land.h"
 #include "commands/LandCommands.h"
-#include "data/DataManager.h"
+#include "data/DataService.h"
 #include "events/LandEventHandlers.h"
 #include "mod/RLXLand.h"
 
@@ -14,7 +14,7 @@ Land& Land::getInstance() { return *instance; }
 bool Land::load() { return true; }
 bool Land::enable() {
     RLXLand::getInstance().getSelf().getLogger().info("land load start");
-    DataManager::getInstance()->loadLands();
+    DataService::getInstance()->loadItems<LandData, LandInformation>();
     RLXLand::getInstance().getSelf().getLogger().info("land load completed");
 
     // 注册命令

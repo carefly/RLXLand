@@ -2,7 +2,7 @@
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
-#include "data/DataManager.h"
+#include "data/DataService.h"
 #include "data/SpatialMap.h"
 #include "service/PermissionService.h"
 
@@ -70,7 +70,14 @@ void TownCommands::registerCommands() {
                 }
 
                 // 检查城镇名称是否已存在
-                if (DataManager::getInstance()->findTownByName(townName)) {
+                bool townExists = false;
+                for (auto town : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                    if (town->td.name == townName) {
+                        townExists = true;
+                        break;
+                    }
+                }
+                if (townExists) {
                     output.error("城镇名称已存在: " + townName);
                     return;
                 }
@@ -102,7 +109,7 @@ void TownCommands::registerCommands() {
 
                 // 创建城镇数据
                 TownData data;
-                data.id          = DataManager::getInstance()->getTownMaxId() + 1;
+                data.id          = DataService::getMaxId<TownData, TownInformation>() + 1;
                 data.name        = townName;
                 data.mayorXuid   = mayorXuid;
                 data.memberXuids = {};
@@ -115,7 +122,7 @@ void TownCommands::registerCommands() {
                 data.description = "城镇 " + townName;
 
                 // 创建城镇
-                DataManager::getInstance()->createTown(data);
+                DataService::getInstance()->createItem<TownData, TownInformation>(data);
 
                 std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
                 output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
@@ -127,19 +134,25 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                auto town = DataManager::getInstance()->findTownByName(townName);
+                TownInformation* town = nullptr;
+                for (auto t : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                    if (t->td.name == townName) {
+                        town = t;
+                        break;
+                    }
+                }
                 if (!town) {
                     output.error("找不到城镇: " + townName);
                     return;
                 }
 
-                DataManager::getInstance()->deleteTown(town->td);
+                DataService::getInstance()->deleteItem<TownData, TownInformation>(town->td);
 
                 output.success("删除城镇: " + townName);
                 break;
             }
             case TownCommandBasicOperation::list: {
-                auto towns = DataManager::getInstance()->getAllTowns();
+                auto towns = DataService::getInstance()->getAllItems<TownData, TownInformation>();
 
                 std::string townList = "城镇列表:\n";
                 for (auto town : towns) {
@@ -154,7 +167,13 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                auto town = DataManager::getInstance()->findTownByName(townName);
+                TownInformation* town = nullptr;
+                for (auto t : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                    if (t->td.name == townName) {
+                        town = t;
+                        break;
+                    }
+                }
                 if (!town) {
                     output.error("找不到城镇: " + townName);
                     return;
@@ -166,7 +185,8 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                DataManager::getInstance()->transferTownMayor(town, newXuid);
+                // transferTownMayor 是 Town 特有的方法，需要保留
+                DataService::getInstance()->transferTownMayor(town, newXuid);
 
                 output.success("转让城镇 " + townName + " 给 " + playerName);
                 break;
@@ -218,7 +238,7 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataManager::getInstance()->addTownMember(town, memberName);
+                        DataService::getInstance()->addItemMember<TownData, TownInformation>(town, memberName);
                     } catch (const PlayerNotFoundException&) {
 
                         output.error("找不到玩家: " + playerName);
@@ -235,7 +255,7 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataManager::getInstance()->removeTownMember(town, memberName);
+                        DataService::getInstance()->removeItemMember<TownData, TownInformation>(town, memberName);
                     } catch (const PlayerNotFoundException&) {
                         output.error("找不到玩家: " + playerName);
                     } catch (const NotMemberException&) {
@@ -284,7 +304,7 @@ void TownCommands::registerCommands() {
 
             switch (operation) {
             case TownCommandPermOperation::perm: {
-                DataManager::getInstance()->modifyTownPerm(currentTown, perm);
+                DataService::getInstance()->modifyItemPermission<TownData, TownInformation>(currentTown, perm);
                 output.success("设置权限为: " + std::to_string(perm));
                 break;
             }
