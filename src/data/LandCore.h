@@ -3,17 +3,13 @@
 #include "data/BaseInformation.h"
 #include <basetsd.h>
 #include <string>
-#include <vector>
 
 
 namespace rlx_land {
 
 class LandData : public BaseData {
 public:
-    int                      x, z, dx, dz, d, perm;
-    LONG64                   id;
-    std::string              ownerXuid, description;
-    std::vector<std::string> memberXuids;
+    std::string ownerXuid;
 };
 
 class LandInformation : public BaseInformation {

@@ -11,6 +11,7 @@ class BaseData {
 public:
     int                      x, z, dx, dz, d, perm;
     LONG64                   id;
+    std::string              name;
     std::string              description;
     std::vector<std::string> memberXuids;
 };

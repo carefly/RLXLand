@@ -3,7 +3,6 @@
 #include "data/BaseInformation.h"
 #include <basetsd.h>
 #include <string>
-#include <vector>
 
 
 namespace rlx_land {
@@ -15,12 +14,7 @@ namespace rlx_land {
 
 class TownData : public BaseData {
 public:
-    std::string              name;
-    std::string              mayorXuid;
-    std::vector<std::string> memberXuids;
-    int                      perm;
-    int                      x, z, dx, dz, d;
-    std::string              description;
+    std::string mayorXuid;
 };
 
 class TownInformation : public BaseInformation {
