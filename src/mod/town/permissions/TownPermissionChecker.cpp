@@ -4,7 +4,6 @@
 #include "service/PermissionService.h"
 
 
-
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
 #include <ll/api/event/ListenerBase.h>
@@ -29,7 +28,7 @@ bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) 
     }
 
     // 如果在Town中，玩家必须是Town的成员或镇长
-    if (town->hasBasicPermission(player->getXuid()) || town->isMayor(player->getXuid())
+    if (town->hasBasicPermission(player->getXuid()) || town->isOwner(player->getXuid())
         || rlx_land::PermissionService::getInstance().isOperator(player)) {
         return true;
     }
@@ -44,7 +43,7 @@ bool TownPermissionChecker::hasTownPerm(Player* player, Vec3 pos, int perm) {
     auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, (int)pos.y);
 
     // 检查是否为Town的成员或镇长
-    if (town && (town->isMayor(player->getXuid()) || town->hasBasicPermission(player->getXuid()))) {
+    if (town && (town->isOwner(player->getXuid()) || town->hasBasicPermission(player->getXuid()))) {
         // 是Town成员，检查Town权限
         if (town->td.perm & perm) {
             return true;

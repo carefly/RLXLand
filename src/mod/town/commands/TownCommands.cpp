@@ -7,7 +7,6 @@
 #include "service/PermissionService.h"
 
 
-
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
 #include <ll/api/event/ListenerBase.h>
@@ -202,7 +201,7 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                if (!town->isMayor(xuid) && !rlx_land::PermissionService::getInstance().isOperator(sp)) {
+                if (!town->isOwner(xuid) && !rlx_land::PermissionService::getInstance().isOperator(sp)) {
                     output.error("您不是所在城镇的镇长或腐竹");
                     return;
                 }
@@ -274,7 +273,7 @@ void TownCommands::registerCommands() {
             auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
             TownInformation* currentTown = nullptr;
-            if (town && (town->isMayor(xuid) || rlx_land::PermissionService::getInstance().isOperator(sp))) {
+            if (town && (town->isOwner(xuid) || rlx_land::PermissionService::getInstance().isOperator(sp))) {
                 currentTown = town;
             }
 

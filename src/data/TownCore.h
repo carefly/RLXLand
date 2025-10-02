@@ -14,6 +14,7 @@ namespace rlx_land {
 
 class TownData : public BaseData {
 public:
+    std::string name;
     std::string mayorXuid;
 };
 
@@ -27,8 +28,6 @@ protected:
 public:
     TownData    td;
     std::string mayorName;
-
-    [[nodiscard]] bool isMayor(const std::string& xuid) const;
 };
 
 } // namespace rlx_land

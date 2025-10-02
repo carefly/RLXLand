@@ -12,7 +12,4 @@ bool TownInformation::checkIsOwner(const std::string& xuid) const {
     return static_cast<const TownData&>(data).mayorXuid == xuid;
 }
 
-bool TownInformation::isMayor(const std::string& xuid) const {
-    return static_cast<const TownData&>(data).mayorXuid == xuid;
-}
 } // namespace rlx_land
