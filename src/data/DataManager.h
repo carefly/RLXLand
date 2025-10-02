@@ -1,9 +1,10 @@
 #pragma once
 #include "LandCore.h"
+#include "LandDataManager.h"
 #include "TownCore.h"
+#include "TownDataManager.h"
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 
@@ -12,7 +13,6 @@ namespace rlx_land {
 class DataManager {
 public:
     static std::shared_ptr<DataManager> getInstance();
-
 
     void loadLands();
     void createLand(LandData data);
@@ -38,10 +38,10 @@ public:
     std::vector<TownInformation*> getAllTowns();
 
 private:
-    std::unordered_map<std::string, std::string> getLandMember(std::vector<std::string> xuids);
+    std::unique_ptr<LandDataManager> landManager;
+    std::unique_ptr<TownDataManager> townManager;
 
-    std::vector<LandInformation*> landInformationList;
-    std::vector<TownInformation*> townInformationList;
+    DataManager();
 };
 
 } // namespace rlx_land
