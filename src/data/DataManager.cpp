@@ -121,7 +121,14 @@ void DataManager::createTown(TownData data) {
     }
 }
 
-void DataManager::deleteTown(TownData data) { townManager->remove(std::move(data)); }
+void DataManager::deleteTown(TownData data) {
+    townManager->remove(std::move(data));
+
+    for (LONG64 xi = data.x; xi <= data.dx; xi++)
+        for (LONG64 zi = data.z; zi <= data.dz; zi++) {
+            TownMap::getInstance()->set(nullptr, xi, zi, data.d);
+        }
+}
 
 void DataManager::modifyTownPerm(TownInformation* ti, int perm) { townManager->modifyPerm(ti, perm); }
 
