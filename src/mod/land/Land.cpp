@@ -14,7 +14,7 @@ Land& Land::getInstance() { return *instance; }
 bool Land::load() { return true; }
 bool Land::enable() {
     RLXLand::getInstance().getSelf().getLogger().info("land load start");
-    DataService::getInstance()->loadItems<LandData, LandInformation>();
+    DataService::getInstance()->loadItems<LandData>();
     RLXLand::getInstance().getSelf().getLogger().info("land load completed");
 
     // 注册命令

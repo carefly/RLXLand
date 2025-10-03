@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+namespace rlx_land {
+// 前向声明避免循环依赖
+class LandDataManager;
+class TownDataManager;
+} // namespace rlx_land
 
 
 namespace rlx_land {
@@ -16,7 +21,9 @@ struct DataLoaderTraits;
 // LandData 特化
 template <>
 struct DataLoaderTraits<LandData> {
-    using DataType = LandData;
+    using DataType    = LandData;
+    using InfoType    = LandInformation;
+    using ManagerType = LandDataManager;
 
     static std::vector<DataType> loadFromFile(const std::string& filePath) {
         return JsonLoader::loadLandsFromFile(filePath);
@@ -27,12 +34,15 @@ struct DataLoaderTraits<LandData> {
     }
 
     static const std::string& getDefaultFilePath() { return JsonLoader::LANDS_JSON_PATH; }
+    static const char*        getTypeName() { return "land"; }
 };
 
 // TownData 特化
 template <>
 struct DataLoaderTraits<TownData> {
-    using DataType = TownData;
+    using DataType    = TownData;
+    using InfoType    = TownInformation;
+    using ManagerType = TownDataManager;
 
     static std::vector<DataType> loadFromFile(const std::string& filePath) {
         return JsonLoader::loadTownsFromFile(filePath);
@@ -43,6 +53,7 @@ struct DataLoaderTraits<TownData> {
     }
 
     static const std::string& getDefaultFilePath() { return JsonLoader::TOWNS_JSON_PATH; }
+    static const char*        getTypeName() { return "town"; }
 };
 
 

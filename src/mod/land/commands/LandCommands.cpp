@@ -213,9 +213,9 @@ void LandCommands::registerCommands() {
                 data.perm        = 0;
                 data.description = "";
                 data.memberXuids = {};
-                data.id          = DataService::getMaxId<LandData, LandInformation>() + 1;
+                data.id          = DataService::getMaxId<LandData>() + 1;
                 // 删除townIds字段，因为Land不需要和任何Town关联
-                DataService::getInstance()->createItem<LandData, LandInformation>(data);
+                DataService::getInstance()->createItem<LandData>(data);
 
                 output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
             } else if (LandCommandBasicOperation::sell == operation) {
@@ -228,7 +228,7 @@ void LandCommands::registerCommands() {
                 }
                 int pay = (li->ld.dx - li->ld.x) * (li->ld.dz - li->ld.z);
                 // RLXMoney::getInstance().addMoney(li->ld.ownerXuid, pay);
-                DataService::getInstance()->deleteItem<LandData, LandInformation>(li->ld);
+                DataService::getInstance()->deleteItem<LandData>(li->ld);
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
             } else if (LandCommandBasicOperation::query == operation) {
                 auto pos  = sp->getPosition();
@@ -301,7 +301,7 @@ void LandCommands::registerCommands() {
                 auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                 try {
-                    DataService::getInstance()->addItemMember<LandData, LandInformation>(li, memberName);
+                    DataService::getInstance()->addItemMember<LandData>(li, memberName);
                 } catch (PlayerNotFoundException&) {
                     output.error("玩家 {} 不存在", memberName);
                 } catch (DuplicateException&) {
@@ -326,7 +326,7 @@ void LandCommands::registerCommands() {
                 }
 
                 try {
-                    DataService::getInstance()->removeItemMember<LandData, LandInformation>(li, playerName);
+                    DataService::getInstance()->removeItemMember<LandData>(li, playerName);
                 } catch (PlayerNotFoundException&) {
                     output.error("玩家 {} 不存在", playerName);
                 } catch (NotMemberException&) {
@@ -365,7 +365,7 @@ void LandCommands::registerCommands() {
                     return;
                 }
 
-                DataService::getInstance()->modifyItemPermission<LandData, LandInformation>(li, perm_num);
+                DataService::getInstance()->modifyItemPermission<LandData>(li, perm_num);
                 output.success(format("领地权限更改为 {}", perm_num));
             }
         });

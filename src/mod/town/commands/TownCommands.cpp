@@ -70,7 +70,7 @@ void TownCommands::registerCommands() {
 
                 // 检查城镇名称是否已存在
                 bool townExists = false;
-                for (auto town : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                for (auto town : DataService::getInstance()->getAllItems<TownData>()) {
                     if (town->td.name == townName) {
                         townExists = true;
                         break;
@@ -108,7 +108,7 @@ void TownCommands::registerCommands() {
 
                 // 创建城镇数据
                 TownData data;
-                data.id          = DataService::getMaxId<TownData, TownInformation>() + 1;
+                data.id          = DataService::getMaxId<TownData>() + 1;
                 data.name        = townName;
                 data.mayorXuid   = mayorXuid;
                 data.memberXuids = {};
@@ -121,7 +121,7 @@ void TownCommands::registerCommands() {
                 data.description = "城镇 " + townName;
 
                 // 创建城镇
-                DataService::getInstance()->createItem<TownData, TownInformation>(data);
+                DataService::getInstance()->createItem<TownData>(data);
 
                 std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
                 output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
@@ -134,7 +134,7 @@ void TownCommands::registerCommands() {
                 }
 
                 TownInformation* town = nullptr;
-                for (auto t : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
                     if (t->td.name == townName) {
                         town = t;
                         break;
@@ -145,13 +145,13 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                DataService::getInstance()->deleteItem<TownData, TownInformation>(town->td);
+                DataService::getInstance()->deleteItem<TownData>(town->td);
 
                 output.success("删除城镇: " + townName);
                 break;
             }
             case TownCommandBasicOperation::list: {
-                auto towns = DataService::getInstance()->getAllItems<TownData, TownInformation>();
+                auto towns = DataService::getInstance()->getAllItems<TownData>();
 
                 std::string townList = "城镇列表:\n";
                 for (auto town : towns) {
@@ -167,7 +167,7 @@ void TownCommands::registerCommands() {
                 }
 
                 TownInformation* town = nullptr;
-                for (auto t : DataService::getInstance()->getAllItems<TownData, TownInformation>()) {
+                for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
                     if (t->td.name == townName) {
                         town = t;
                         break;
@@ -237,7 +237,7 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataService::getInstance()->addItemMember<TownData, TownInformation>(town, memberName);
+                        DataService::getInstance()->addItemMember<TownData>(town, memberName);
                     } catch (const PlayerNotFoundException&) {
 
                         output.error("找不到玩家: " + playerName);
@@ -254,7 +254,7 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataService::getInstance()->removeItemMember<TownData, TownInformation>(town, memberName);
+                        DataService::getInstance()->removeItemMember<TownData>(town, memberName);
                     } catch (const PlayerNotFoundException&) {
                         output.error("找不到玩家: " + playerName);
                     } catch (const NotMemberException&) {
@@ -303,7 +303,7 @@ void TownCommands::registerCommands() {
 
             switch (operation) {
             case TownCommandPermOperation::perm: {
-                DataService::getInstance()->modifyItemPermission<TownData, TownInformation>(currentTown, perm);
+                DataService::getInstance()->modifyItemPermission<TownData>(currentTown, perm);
                 output.success("设置权限为: " + std::to_string(perm));
                 break;
             }
