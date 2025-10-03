@@ -10,7 +10,7 @@ namespace rlx_land {
 
 class TownDataManager : public BaseDataManager<TownData, TownInformation> {
 protected:
-    std::string getFilePath() const override { return JsonLoader::TOWNS_JSON_PATH; }
+    [[nodiscard]] std::string getFilePath() const override { return JsonLoader::TOWNS_JSON_PATH; }
 
     void initInformation(TownInformation* info) override {
         info->mayorName = LeviLaminaAPI::getPlayerNameByXuid(info->td.mayorXuid);

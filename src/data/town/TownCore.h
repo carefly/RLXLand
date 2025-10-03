@@ -7,11 +7,6 @@
 
 namespace rlx_land {
 
-#define TOWN_BIG_SIZE    100000
-#define TOWN_MIDDLE_SIZE 10000
-#define TOWN_SMALL_SIZE  100
-
-
 class TownData : public BaseData {
 public:
     std::string name;

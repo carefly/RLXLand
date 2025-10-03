@@ -21,9 +21,6 @@ public:
 
 protected:
     [[nodiscard]] bool checkIsOwner(const std::string& xuid) const override;
-
-public:
-    [[nodiscard]] std::string getMembers() const;
 };
 
 } // namespace rlx_land

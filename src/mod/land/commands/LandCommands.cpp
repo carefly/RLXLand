@@ -254,7 +254,7 @@ void LandCommands::registerCommands() {
                 }
 
                 // 显示城镇信息
-                if (town == NULL) {
+                if (town == nullptr) {
                     info += "§b[城镇信息]§r 公共区域（未被任何城镇管辖）\n";
                 } else {
                     info += "§b[城镇信息]§r " + town->td.name + "\n";
