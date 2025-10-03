@@ -1,12 +1,9 @@
 #pragma once
-#include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/BaseInformation.h"
-#include "data/LandCore.h"
-#include "data/TownCore.h"
+#include "data/DataLoaderTraits.h"
 #include <algorithm>
-#include <type_traits>
 #include <vector>
 
 
@@ -16,6 +13,7 @@ template <typename T, typename U>
 class BaseDataManager {
 protected:
     std::vector<U*> informationList;
+    using Traits = DataLoaderTraits<T>; // 类型别名简化代码
 
     // 虚函数需要子类实现
     virtual std::string getFilePath() const      = 0;
@@ -34,34 +32,18 @@ public:
 
     // 加载数据
     void load() {
-        // 根据类型选择正确的加载函数
-        if constexpr (std::is_same_v<T, LandData>) {
-            std::vector<LandData> items = JsonLoader::loadLandsFromFile(getFilePath());
-            for (const auto& item : items) {
-                auto info = new U(item);
-                initInformation(info);
-                informationList.push_back(info);
-            }
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            std::vector<TownData> items = JsonLoader::loadTownsFromFile(getFilePath());
-            for (const auto& item : items) {
-                auto info = new U(item);
-                initInformation(info);
-                informationList.push_back(info);
-            }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
+        for (const auto& item : items) {
+            auto info = new U(item);
+            initInformation(info);
+            informationList.push_back(info);
         }
     }
 
     // 创建数据项
     void create(T data) {
         // 先从文件加载现有数据
-        std::vector<T> items;
-
-        if constexpr (std::is_same_v<T, LandData>) {
-            items = JsonLoader::loadLandsFromFile(getFilePath());
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            items = JsonLoader::loadTownsFromFile(getFilePath());
-        }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
 
         // 检查ID是否已存在
         auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
@@ -74,11 +56,7 @@ public:
         items.push_back(data);
 
         // 保存回文件
-        if constexpr (std::is_same_v<T, LandData>) {
-            JsonLoader::saveLandsToFile(getFilePath(), items);
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            JsonLoader::saveTownsToFile(getFilePath(), items);
-        }
+        Traits::saveToFile(getFilePath(), items);
 
         // 添加到内存中
         auto info = new U(data);
@@ -89,13 +67,7 @@ public:
     // 删除数据项
     void remove(T data) {
         // 从文件加载现有数据
-        std::vector<T> items;
-
-        if constexpr (std::is_same_v<T, LandData>) {
-            items = JsonLoader::loadLandsFromFile(getFilePath());
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            items = JsonLoader::loadTownsFromFile(getFilePath());
-        }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
 
         // 查找并删除指定项
         auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
@@ -104,11 +76,7 @@ public:
             items.erase(it);
 
             // 保存回文件
-            if constexpr (std::is_same_v<T, LandData>) {
-                JsonLoader::saveLandsToFile(getFilePath(), items);
-            } else if constexpr (std::is_same_v<T, TownData>) {
-                JsonLoader::saveTownsToFile(getFilePath(), items);
-            }
+            Traits::saveToFile(getFilePath(), items);
 
             // 从内存中删除
             auto memIt = std::find_if(informationList.begin(), informationList.end(), [&data](U* info) {
@@ -129,13 +97,7 @@ public:
     void modifyPerm(U* info, int perm) {
         // 在JSON中修改权限
         // 先从文件加载现有数据
-        std::vector<T> items;
-
-        if constexpr (std::is_same_v<T, LandData>) {
-            items = JsonLoader::loadLandsFromFile(getFilePath());
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            items = JsonLoader::loadTownsFromFile(getFilePath());
-        }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
 
         // 查找并更新指定项
         auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
@@ -144,11 +106,7 @@ public:
             it->perm = perm;
 
             // 保存回文件
-            if constexpr (std::is_same_v<T, LandData>) {
-                JsonLoader::saveLandsToFile(getFilePath(), items);
-            } else if constexpr (std::is_same_v<T, TownData>) {
-                JsonLoader::saveTownsToFile(getFilePath(), items);
-            }
+            Traits::saveToFile(getFilePath(), items);
         } else {
             throw LandNotFoundException("Item not found to modify permission");
         }
@@ -173,24 +131,13 @@ public:
         // 添加新成员
         info->data.memberXuids.push_back(xuid);
 
-        std::vector<T> items;
-
-        if constexpr (std::is_same_v<T, LandData>) {
-            items = JsonLoader::loadLandsFromFile(getFilePath());
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            items = JsonLoader::loadTownsFromFile(getFilePath());
-        }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
 
         auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
 
         if (it != items.end()) {
             it->memberXuids = info->data.memberXuids;
-
-            if constexpr (std::is_same_v<T, LandData>) {
-                JsonLoader::saveLandsToFile(getFilePath(), items);
-            } else if constexpr (std::is_same_v<T, TownData>) {
-                JsonLoader::saveTownsToFile(getFilePath(), items);
-            }
+            Traits::saveToFile(getFilePath(), items);
         }
     }
 
@@ -209,24 +156,13 @@ public:
 
         info->data.memberXuids.erase(it);
 
-        std::vector<T> items;
-
-        if constexpr (std::is_same_v<T, LandData>) {
-            items = JsonLoader::loadLandsFromFile(getFilePath());
-        } else if constexpr (std::is_same_v<T, TownData>) {
-            items = JsonLoader::loadTownsFromFile(getFilePath());
-        }
+        std::vector<T> items = Traits::loadFromFile(getFilePath());
 
         auto it2 = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
 
         if (it2 != items.end()) {
             it2->memberXuids = info->data.memberXuids;
-
-            if constexpr (std::is_same_v<T, LandData>) {
-                JsonLoader::saveLandsToFile(getFilePath(), items);
-            } else if constexpr (std::is_same_v<T, TownData>) {
-                JsonLoader::saveTownsToFile(getFilePath(), items);
-            }
+            Traits::saveToFile(getFilePath(), items);
         }
     }
 
