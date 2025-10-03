@@ -1,0 +1,169 @@
+#include "BaseDataManager.h"
+#include "common/LeviLaminaAPI.h"
+#include "common/exceptions/LandExceptions.h"
+#include "data/TownCore.h"
+
+namespace rlx_land {
+
+template <typename T, typename U>
+BaseDataManager<T, U>::~BaseDataManager() {
+    for (auto* info : informationList) {
+        delete info;
+    }
+    informationList.clear();
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::load() {
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    for (const auto& item : items) {
+        auto info = new U(item);
+        initInformation(info);
+        informationList.push_back(info);
+    }
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::create(T data) {
+    // 先从文件加载现有数据
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+
+    // 检查ID是否已存在
+    auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
+
+    if (it != items.end()) {
+        throw DuplicateException("Item duplicate with ID: " + std::to_string(data.id));
+    }
+
+    // 添加新项到列表
+    items.push_back(data);
+
+    // 保存回文件
+    Traits::saveToFile(getFilePath(), items);
+
+    // 添加到内存中
+    auto info = new U(data);
+    initInformation(info);
+    informationList.push_back(info);
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::remove(T data) {
+    // 从文件加载现有数据
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+
+    // 查找并删除指定项
+    auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
+
+    if (it != items.end()) {
+        items.erase(it);
+
+        // 保存回文件
+        Traits::saveToFile(getFilePath(), items);
+
+        // 从内存中删除
+        auto memIt = std::find_if(informationList.begin(), informationList.end(), [&data](U* info) {
+            return info->data.id == data.id;
+        });
+
+        if (memIt != informationList.end()) {
+            U* info = *memIt;
+            informationList.erase(memIt);
+            delete info;
+        }
+    } else {
+        throw LandNotFoundException("Item not found to delete");
+    }
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
+    // 在JSON中修改权限
+    // 先从文件加载现有数据
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+
+    // 查找并更新指定项
+    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+
+    if (it != items.end()) {
+        it->perm = perm;
+
+        // 保存回文件
+        Traits::saveToFile(getFilePath(), items);
+    } else {
+        throw LandNotFoundException("Item not found to modify permission");
+    }
+
+    // 更新内存中的权限
+    info->data.perm = perm;
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
+    if (info == nullptr) throw LandNotFoundException("Item not found");
+
+    std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
+
+    // 检查玩家是否已经是成员
+    if (std::find(info->data.memberXuids.begin(), info->data.memberXuids.end(), xuid) != info->data.memberXuids.end()) {
+        throw DuplicateException("Player is already a member: " + playerName);
+    }
+
+    // 添加新成员
+    info->data.memberXuids.push_back(xuid);
+
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+
+    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+
+    if (it != items.end()) {
+        it->memberXuids = info->data.memberXuids;
+        Traits::saveToFile(getFilePath(), items);
+    }
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::removeMember(U* info, const std::string& playerName) {
+    if (info == nullptr) throw LandNotFoundException("Item not found");
+
+    std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
+
+    // 查找并移除成员
+    auto it = std::find(info->data.memberXuids.begin(), info->data.memberXuids.end(), xuid);
+    if (it == info->data.memberXuids.end()) {
+        throw NotMemberException("Player is not a member: " + playerName);
+    }
+
+    info->data.memberXuids.erase(it);
+
+    std::vector<T> items = Traits::loadFromFile(getFilePath());
+
+    auto it2 = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+
+    if (it2 != items.end()) {
+        it2->memberXuids = info->data.memberXuids;
+        Traits::saveToFile(getFilePath(), items);
+    }
+}
+
+template <typename T, typename U>
+LONG64 BaseDataManager<T, U>::getMaxId() const {
+    LONG64 max = 0;
+    for (const auto& itemInfo : informationList) {
+        if (max < itemInfo->data.id) max = itemInfo->data.id;
+    }
+    return max;
+}
+
+template <typename T, typename U>
+std::vector<U*> BaseDataManager<T, U>::getAllItems() const {
+    return informationList;
+}
+
+// 显式实例化 - 需要根据实际使用的类型进行调整
+template class BaseDataManager<LandData, LandInformation>;
+template class BaseDataManager<TownData, TownInformation>;
+
+} // namespace rlx_land
