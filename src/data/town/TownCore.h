@@ -1,6 +1,6 @@
 #pragma once
 
-#include "data/BaseInformation.h"
+#include "../core/BaseInformation.h"
 #include <basetsd.h>
 #include <string>
 

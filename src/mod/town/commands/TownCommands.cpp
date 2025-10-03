@@ -2,10 +2,9 @@
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
-#include "data/DataService.h"
-#include "data/SpatialMap.h"
+#include "data/service/DataService.h"
+#include "data/spatial/SpatialMap.h"
 #include "service/PermissionService.h"
-
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>

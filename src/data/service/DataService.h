@@ -1,8 +1,8 @@
 #pragma once
 
-#include "LandDataManager.h"
-#include "TownCore.h"
-#include "TownDataManager.h"
+#include "data/land/LandDataManager.h"
+#include "data/town/TownCore.h"
+#include "data/town/TownDataManager.h"
 #include <memory>
 #include <string>
 #include <vector>

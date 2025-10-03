@@ -1,7 +1,7 @@
 #pragma once
-#include "BaseInformation.h"
-#include "LandCore.h"
-#include "TownCore.h"
+#include "data/core/BaseInformation.h"
+#include "data/land/LandCore.h"
+#include "data/town/TownCore.h"
 #include <memory>
 
 namespace rlx_land {

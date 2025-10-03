@@ -1,9 +1,10 @@
 #pragma once
+#include "../land/LandCore.h"
+#include "../town/TownCore.h"
 #include "common/JsonLoader.h"
-#include "data/LandCore.h"
-#include "data/TownCore.h"
 #include <string>
 #include <vector>
+
 
 
 namespace rlx_land {

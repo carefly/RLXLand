@@ -1,6 +1,6 @@
 #include "LandEventHandlers.h"
-#include "../permissions/LandPermissionChecker.h"
-#include "data/SpatialMap.h"
+#include "data/spatial/SpatialMap.h"
+#include "mod/land/permissions/LandPermissionChecker.h"
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>

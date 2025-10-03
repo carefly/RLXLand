@@ -1,11 +1,11 @@
 #include "LandCommands.h"
-#include "../../town/Town.h"
-#include "../../town/permissions/TownPermissionChecker.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
-#include "data/DataService.h"
-#include "data/LandCore.h"
-#include "data/SpatialMap.h"
+#include "data/land/LandCore.h"
+#include "data/service/DataService.h"
+#include "data/spatial/SpatialMap.h"
+#include "mod/town/Town.h"
+#include "mod/town/permissions/TownPermissionChecker.h"
 #include "service/PermissionService.h"
 
 

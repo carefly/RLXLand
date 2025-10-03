@@ -1,6 +1,6 @@
 #include "common/JsonLoader.h"
-#include "data/LandCore.h"
-#include "data/TownCore.h"
+#include "../data/land/LandCore.h"
+#include "../data/town/TownCore.h"
 #include "mod/RLXLand.h"
 #include <fstream>
 #include <ll/api/io/Logger.h>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "data/BaseInformation.h"
-#include "data/DataLoaderTraits.h"
+#include "BaseInformation.h"
+#include "DataLoaderTraits.h"
 #include <vector>
 
 
