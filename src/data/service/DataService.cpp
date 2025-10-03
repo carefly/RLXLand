@@ -44,18 +44,18 @@ void DataService::loadItems() {
 template <typename T, typename U>
 void DataService::createItem(T data) {
     if constexpr (std::is_same_v<T, LandData>) {
-        createItemInternal<T, U, LandDataManager, LandMap>(std::move(data), landManager.get());
+        createItemInternal<T, U, LandDataManager>(std::move(data), landManager.get());
     } else if constexpr (std::is_same_v<T, TownData>) {
-        createItemInternal<T, U, TownDataManager, TownMap>(std::move(data), townManager.get());
+        createItemInternal<T, U, TownDataManager>(std::move(data), townManager.get());
     }
 }
 
 template <typename T, typename U>
 void DataService::deleteItem(T data) {
     if constexpr (std::is_same_v<T, LandData>) {
-        deleteItemInternal<T, U, LandDataManager, LandMap>(std::move(data), landManager.get());
+        deleteItemInternal<T, U, LandDataManager>(std::move(data), landManager.get());
     } else if constexpr (std::is_same_v<T, TownData>) {
-        deleteItemInternal<T, U, TownDataManager, TownMap>(std::move(data), townManager.get());
+        deleteItemInternal<T, U, TownDataManager>(std::move(data), townManager.get());
     }
 }
 
@@ -144,24 +144,11 @@ void DataService::loadData(const std::string& jsonPath, ManagerType* manager, co
         manager->getAllItems().push_back(info);
 
         // 更新空间地图
-        if constexpr (std::is_same_v<U, LandInformation>) {
-            for (LONG64 xi = item.x; xi <= item.dx; xi++) {
-                for (LONG64 zi = item.z; zi <= item.dz; zi++) {
-                    LandMap::getInstance()->set(info, xi, zi, item.d);
-                }
-            }
-        } else if constexpr (std::is_same_v<U, TownInformation>) {
-            TownMap::getInstance()->set(info, item.x, item.z, item.d);
-            for (int x = item.x; x <= item.dx; x++) {
-                for (int z = item.z; z <= item.dz; z++) {
-                    TownMap::getInstance()->set(info, x, z, item.d);
-                }
-            }
-        }
+        updateSpatialMapRange<U>(info, item.x, item.z, item.dx, item.dz, item.d);
     }
 }
 
-template <typename T, typename U, typename ManagerType, typename MapType>
+template <typename T, typename U, typename ManagerType>
 void DataService::createItemInternal(T data, ManagerType* manager) {
     manager->create(std::move(data));
 
@@ -169,23 +156,15 @@ void DataService::createItemInternal(T data, ManagerType* manager) {
     auto items = manager->getAllItems();
     if (!items.empty()) {
         U* info = items.back();
-        for (LONG64 x = data.x; x <= data.dx; x++) {
-            for (LONG64 z = data.z; z <= data.dz; z++) {
-                MapType::getInstance()->set(info, x, z, data.d);
-            }
-        }
+        updateSpatialMapRange<U>(info, data.x, data.z, data.dx, data.dz, data.d);
     }
 }
 
-template <typename T, typename U, typename ManagerType, typename MapType>
+template <typename T, typename U, typename ManagerType>
 void DataService::deleteItemInternal(T data, ManagerType* manager) {
     manager->remove(std::move(data));
 
-    for (LONG64 xi = data.x; xi <= data.dx; xi++) {
-        for (LONG64 zi = data.z; zi <= data.dz; zi++) {
-            MapType::getInstance()->set(nullptr, xi, zi, data.d);
-        }
-    }
+    updateSpatialMapRange<U>(nullptr, data.x, data.z, data.dx, data.dz, data.d);
 }
 
 template <typename T, typename U, typename ManagerType>
@@ -201,6 +180,21 @@ void DataService::addItemMemberInternal(U* info, const std::string& playerName, 
 template <typename T, typename U, typename ManagerType>
 void DataService::removeItemMemberInternal(U* info, const std::string& playerName, ManagerType* manager) {
     manager->removeMember(info, playerName);
+}
+
+// 模板化的地图更新函数实现
+template <typename U>
+void DataService::updateSpatialMap(U* info, LONG64 x, LONG64 z, int d) {
+    SpatialMap<U>::getInstance()->set(info, x, z, d);
+}
+
+template <typename U>
+void DataService::updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d) {
+    for (LONG64 x = x1; x <= x2; x++) {
+        for (LONG64 z = z1; z <= z2; z++) {
+            SpatialMap<U>::getInstance()->set(info, x, z, d);
+        }
+    }
 }
 
 // 显式模板实例化
@@ -225,5 +219,13 @@ template void
 DataService::removeItemMember<TownData, TownInformation>(TownInformation* info, const std::string& playerName);
 template LONG64                        DataService::getMaxId<TownData, TownInformation>();
 template std::vector<TownInformation*> DataService::getAllItems<TownData, TownInformation>();
+
+// 地图更新函数的模板实例化
+template void DataService::updateSpatialMap<LandInformation>(LandInformation* info, LONG64 x, LONG64 z, int d);
+template void DataService::updateSpatialMap<TownInformation>(TownInformation* info, LONG64 x, LONG64 z, int d);
+template void DataService::updateSpatialMapRange<
+    LandInformation>(LandInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
+template void DataService::updateSpatialMapRange<
+    TownInformation>(TownInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
 
 } // namespace rlx_land

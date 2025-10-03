@@ -54,10 +54,10 @@ private:
     template <typename T, typename U, typename ManagerType>
     void loadData(const std::string& jsonPath, ManagerType* manager, const std::string& typeName);
 
-    template <typename T, typename U, typename ManagerType, typename MapType>
+    template <typename T, typename U, typename ManagerType>
     void createItemInternal(T data, ManagerType* manager);
 
-    template <typename T, typename U, typename ManagerType, typename MapType>
+    template <typename T, typename U, typename ManagerType>
     void deleteItemInternal(T data, ManagerType* manager);
 
     template <typename T, typename U, typename ManagerType>
@@ -68,6 +68,13 @@ private:
 
     template <typename T, typename U, typename ManagerType>
     void removeItemMemberInternal(U* info, const std::string& playerName, ManagerType* manager);
+
+    // 模板化的地图更新函数
+    template <typename U>
+    void updateSpatialMap(U* info, LONG64 x, LONG64 z, int d);
+
+    template <typename U>
+    void updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
 };
 
 } // namespace rlx_land
