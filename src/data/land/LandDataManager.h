@@ -1,9 +1,8 @@
 #pragma once
-#include <utility>
 
-#include "../core/BaseDataManager.h"
 #include "LandCore.h"
 #include "common/LeviLaminaAPI.h"
+#include "data/core/BaseDataManager.h"
 
 namespace rlx_land {
 
@@ -13,12 +12,6 @@ protected:
 
     void initInformation(LandInformation* info) override {
         info->ownerName = LeviLaminaAPI::getPlayerNameByXuid(info->ld.ownerXuid);
-    }
-
-public:
-    void create(LandData data) {
-        BaseDataManager::create(std::move(data));
-        // Land特定逻辑可以在这里添加
     }
 };
 

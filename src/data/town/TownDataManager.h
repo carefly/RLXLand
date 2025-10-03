@@ -1,10 +1,10 @@
 #pragma once
-#include "../core/BaseDataManager.h"
 #include "TownCore.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
+#include "data/core/BaseDataManager.h"
 #include <algorithm>
-#include <utility>
+
 
 namespace rlx_land {
 
@@ -17,11 +17,6 @@ protected:
     }
 
 public:
-    void create(TownData data) {
-        BaseDataManager::create(std::move(data));
-        // Town特定逻辑可以在这里添加
-    }
-
     // Town特有的方法
     void transferMayor(TownInformation* ti, const std::string& playerName) {
         if (ti == nullptr) throw LandNotFoundException("Town not found");
