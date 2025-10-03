@@ -3,7 +3,6 @@
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
-#include "data/spatial/SpatialMap.h"
 #include "service/PermissionService.h"
 
 #include <basetsd.h>
@@ -213,7 +212,7 @@ void TownCommands::registerCommands() {
                 // 检查是否为OP或镇长
                 // 获取玩家所在位置的Town
                 auto pos  = sp->getPosition();
-                auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if (!town) {
                     output.error("您不在任何城镇内");
@@ -289,7 +288,7 @@ void TownCommands::registerCommands() {
             // 检查是否为OP或镇长
             // 获取玩家所在位置的Town
             auto pos  = sp->getPosition();
-            auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+            auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
             TownInformation* currentTown = nullptr;
             if (town && (town->isOwner(xuid) || rlx_land::PermissionService::getInstance().isOperator(sp))) {
@@ -327,7 +326,7 @@ void TownCommands::registerCommands() {
             switch (operation) {
             case TownCommandOperation::info: {
                 auto pos  = sp->getPosition();
-                auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if (town == nullptr) {
                     output.success("当前位置不在任何城镇内");

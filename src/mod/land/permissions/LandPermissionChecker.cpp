@@ -1,5 +1,5 @@
 #include "LandPermissionChecker.h"
-#include "data/spatial/SpatialMap.h"
+#include "data/service/DataService.h"
 #include "service/PermissionService.h"
 
 #include <basetsd.h>
@@ -97,7 +97,7 @@ bool LandPermissionChecker::hasPerm(Player* p, Vec3 pos, int perm) {
     }
 
     // 检查玩家当前位置是否在领地内
-    auto land = LandMap::getInstance()->find((int)pos.x, (int)pos.z, (int)p->getDimensionId());
+    auto land = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, (int)p->getDimensionId());
 
     // 情况1: 玩家在领地内（最高优先级）
     if (nullptr != land) {
@@ -113,7 +113,7 @@ bool LandPermissionChecker::hasPerm(Player* p, Vec3 pos, int perm) {
     // 情况2: 玩家不在任何领地内，检查是否在城镇内
     else {
         // 查找当前位置是否在某个城镇内
-        auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, (int)p->getDimensionId());
+        auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, (int)p->getDimensionId());
 
         // 情况2.1: 玩家在城镇内
         if (nullptr != town) {
@@ -145,7 +145,7 @@ bool LandPermissionChecker::canHurt(Actor& actor, ActorDamageSource const& sourc
     auto  type       = hurtActor.getEntityTypeId();
     auto  pos        = hurtActor.getPosition();
     int   typeMasked = (int)type & (~(int)ActorType::TypeMask);
-    auto  li         = LandMap::getInstance()->find((int)pos.x, (int)pos.z, (int)hurtActor.getDimensionId());
+    auto  li         = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, (int)hurtActor.getDimensionId());
 
     if ((int)ActorType::Monster == (typeMasked & 0xFFF)) return true;
 

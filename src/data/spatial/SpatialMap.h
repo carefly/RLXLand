@@ -1,21 +1,27 @@
 #pragma once
 #include "data/core/BaseInformation.h"
-#include "data/land/LandCore.h"
-#include "data/town/TownCore.h"
 #include <memory>
 
 namespace rlx_land {
 
+// 前向声明
 template <typename InfoType>
 class SmallMap;
 template <typename InfoType>
 class MiddleMap;
 template <typename InfoType>
 class BigMap;
+class DataService;
 
 template <typename InfoType>
 class SpatialMap {
-public:
+private:
+    // 只有 DataService 可以访问 SpatialMap 的公共接口
+    friend class DataService;
+    friend class SmallMap<InfoType>;
+    friend class MiddleMap<InfoType>;
+    friend class BigMap<InfoType>;
+
     static std::shared_ptr<SpatialMap> getInstance() {
         static std::shared_ptr<SpatialMap> spatialMapInstance = std::make_shared<SpatialMap>();
         return spatialMapInstance;
@@ -23,11 +29,6 @@ public:
 
     InfoType* find(LONG64 coordx, LONG64 coordz, int d);
     void      set(InfoType* info, LONG64 xi, LONG64 zi, int d);
-
-private:
-    friend class SmallMap<InfoType>;
-    friend class MiddleMap<InfoType>;
-    friend class BigMap<InfoType>;
 
     BigMap<InfoType>* map[20][20][3] = {};
 };
@@ -245,9 +246,5 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
 
     smallMap->setInfo((int)x, (int)z, info);
 }
-
-// 定义类型别名保持接口兼容
-using LandMap = SpatialMap<LandInformation>;
-using TownMap = SpatialMap<TownInformation>;
 
 } // namespace rlx_land

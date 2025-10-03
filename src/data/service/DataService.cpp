@@ -73,6 +73,22 @@ std::vector<typename DataLoaderTraits<T>::InfoType*> DataService::getAllItems() 
     return getInstance()->getManager<T>()->getAllItems();
 }
 
+// 空间查询方法实现
+template <typename T>
+typename DataLoaderTraits<T>::InfoType* DataService::findItemAt(LONG64 x, LONG64 z, int dimension) {
+    using InfoType = typename DataLoaderTraits<T>::InfoType;
+    return SpatialMap<InfoType>::getInstance()->find(x, z, dimension);
+}
+
+// 便捷方法实现
+LandInformation* DataService::findLandAt(LONG64 x, LONG64 z, int dimension) {
+    return findItemAt<LandData>(x, z, dimension);
+}
+
+TownInformation* DataService::findTownAt(LONG64 x, LONG64 z, int dimension) {
+    return findItemAt<TownData>(x, z, dimension);
+}
+
 // 私有模板方法实现
 template <typename T>
 void DataService::loadData(
@@ -214,5 +230,9 @@ template void DataService::updateSpatialMapRange<
     LandInformation>(LandInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
 template void DataService::updateSpatialMapRange<
     TownInformation>(TownInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
+
+// 空间查询方法的模板实例化
+template LandInformation* DataService::findItemAt<LandData>(LONG64 x, LONG64 z, int dimension);
+template TownInformation* DataService::findItemAt<TownData>(LONG64 x, LONG64 z, int dimension);
 
 } // namespace rlx_land

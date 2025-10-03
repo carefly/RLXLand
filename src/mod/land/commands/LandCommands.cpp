@@ -1,9 +1,7 @@
 #include "LandCommands.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
-#include "data/land/LandCore.h"
 #include "data/service/DataService.h"
-#include "data/spatial/SpatialMap.h"
 #include "mod/town/Town.h"
 #include "mod/town/permissions/TownPermissionChecker.h"
 #include "service/PermissionService.h"
@@ -189,7 +187,7 @@ void LandCommands::registerCommands() {
 
                 for (int xi = x; xi <= dx; xi++)
                     for (int zi = z; zi <= dz; zi++) {
-                        auto li = LandMap::getInstance()->find(xi, zi, d);
+                        auto li = DataService::getInstance()->findLandAt(xi, zi, d);
                         if (NULL != li) {
                             output.error(format("领地冲突 x:{} z:{} 领地所有者 {} 请重新圈地", xi, zi, li->ownerName));
                             return;
@@ -220,7 +218,7 @@ void LandCommands::registerCommands() {
                 output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
             } else if (LandCommandBasicOperation::sell == operation) {
                 auto pos = sp->getPosition();
-                auto li  = LandMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto li  = DataService::getInstance()->findLandAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if ((nullptr == li || !li->isOwner(xuid)) && !PermissionService::getInstance().isOperator(sp)) {
                     output.error("该位置不是你的领地");
@@ -232,8 +230,8 @@ void LandCommands::registerCommands() {
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
             } else if (LandCommandBasicOperation::query == operation) {
                 auto pos  = sp->getPosition();
-                auto li   = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
-                auto town = Town::getInstance().getTownAt(pos, sp->getDimensionId());
+                auto li   = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
+                auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 std::string info;
                 info += "当前位置: x=" + std::to_string((int)pos.x) + ", z=" + std::to_string((int)pos.z)
@@ -284,7 +282,7 @@ void LandCommands::registerCommands() {
             if (LandCommandTrustOperation::trust == operation) {
 
                 auto pos = sp->getPosition();
-                auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
+                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
 
                 if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
                     output.error("你不是领地主人");
@@ -312,7 +310,7 @@ void LandCommands::registerCommands() {
 
             } else if (LandCommandTrustOperation::untrust == operation) {
                 auto pos = sp->getPosition();
-                auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
+                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
 
                 if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
                     output.error("你不是领地主人");
@@ -353,7 +351,7 @@ void LandCommands::registerCommands() {
 
             if (LandCommandPermOperation::perm == operation) {
                 auto pos = sp->getPosition();
-                auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, sp->getDimensionId());
+                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
 
                 if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
                     output.error("你不是领地主人");

@@ -15,16 +15,6 @@ BaseDataManager<T, U>::~BaseDataManager() {
 }
 
 template <typename T, typename U>
-void BaseDataManager<T, U>::load() {
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
-    for (const auto& item : items) {
-        auto info = new U(item);
-        initInformation(info);
-        informationList.push_back(info);
-    }
-}
-
-template <typename T, typename U>
 void BaseDataManager<T, U>::create(T data) {
     // 先从文件加载现有数据
     std::vector<T> items = Traits::loadFromFile(getFilePath());

@@ -24,9 +24,6 @@ public:
 
     virtual ~BaseDataManager();
 
-    // 加载数据
-    void load();
-
     // 创建数据项
     void create(T data);
 

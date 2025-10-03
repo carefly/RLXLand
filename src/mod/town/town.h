@@ -23,8 +23,6 @@ public:
     /// @return True if the plugin is disabled successfully.
     bool disable();
 
-    TownInformation* getTownAt(Vec3 pos, int dim);
-
 private:
     void registerCommands();
 

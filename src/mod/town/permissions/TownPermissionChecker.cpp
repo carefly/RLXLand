@@ -1,6 +1,5 @@
 #include "TownPermissionChecker.h"
-#include "data/spatial/SpatialMap.h"
-#include "data/town/TownCore.h"
+#include "data/service/DataService.h"
 #include "service/PermissionService.h"
 
 
@@ -20,7 +19,7 @@ bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) 
     // 1. 如果在Wilderness中，允许圈地
     // 2. 如果在Town中，玩家必须是Town成员
 
-    auto town = TownMap::getInstance()->find(x, z, dim);
+    auto town = DataService::getInstance()->findTownAt(x, z, dim);
 
     // 如果不在任何Town中，则在Wilderness中，允许圈地
     if (town == nullptr) {
@@ -40,7 +39,7 @@ bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) 
 // 检查玩家在指定位置是否有权限
 bool TownPermissionChecker::hasTownPerm(Player* player, Vec3 pos, int perm) {
     // 检查玩家在指定位置是否有权限
-    auto town = TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, (int)pos.y);
+    auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, (int)pos.y);
 
     // 检查是否为Town的成员或镇长
     if (town && (town->isOwner(player->getXuid()) || town->hasBasicPermission(player->getXuid()))) {

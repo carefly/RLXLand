@@ -1,7 +1,5 @@
 #include "town.h"
 #include "commands/TownCommands.h"
-#include "data/spatial/SpatialMap.h"
-#include "data/town/TownCore.h"
 #include "mod/RLXLand.h"
 
 
@@ -18,10 +16,6 @@ namespace rlx_land {
 static std::unique_ptr<Town> instance;
 
 Town& Town::getInstance() { return *instance; }
-
-TownInformation* Town::getTownAt(Vec3 pos, int dim) {
-    return TownMap::getInstance()->find((LONG64)pos.x, (LONG64)pos.z, dim);
-}
 
 bool Town::load() { return true; }
 

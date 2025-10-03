@@ -17,7 +17,6 @@ class DataService {
 public:
     static std::shared_ptr<DataService> getInstance();
 
-    // 简化后的模板化接口 - 只需要一个模板参数
     template <typename T>
     void loadItems();
 
@@ -41,6 +40,14 @@ public:
 
     template <typename T>
     std::vector<typename DataLoaderTraits<T>::InfoType*> getAllItems();
+
+    // 空间查询接口
+    template <typename T>
+    typename DataLoaderTraits<T>::InfoType* findItemAt(LONG64 x, LONG64 z, int dimension);
+
+    // 便捷的专用查询方法
+    LandInformation* findLandAt(LONG64 x, LONG64 z, int dimension);
+    TownInformation* findTownAt(LONG64 x, LONG64 z, int dimension);
 
     // Town 特有的方法（无法统一的方法）
     void             transferTownMayor(TownInformation* ti, const std::string& playerName);

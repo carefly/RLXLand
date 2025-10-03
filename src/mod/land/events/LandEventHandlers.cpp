@@ -1,5 +1,5 @@
 #include "LandEventHandlers.h"
-#include "data/spatial/SpatialMap.h"
+#include "data/service/DataService.h"
 #include "mod/land/permissions/LandPermissionChecker.h"
 
 #include <basetsd.h>
@@ -76,7 +76,7 @@ void LandEventHandlers::registerEventListeners() {
         eventBus.emplaceListener<ll::event::world::FireSpreadEvent>([](ll::event::world::FireSpreadEvent& event) {
             auto pos = event.pos();
             auto dim = event.blockSource().getDimensionId();
-            auto li  = LandMap::getInstance()->find((int)pos.x, (int)pos.z, (int)dim);
+            auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, (int)dim);
 
             if (li != NULL && (li->ld.perm & 256)) { // PERM_FIRE = 256
                 event.setCancelled(false);
