@@ -11,7 +11,7 @@ namespace rlx_land {
 
 // 路径管理方法
 std::string JsonLoader::getLandsBaseDir() { return "../RLXModeResources/data/lands"; }
-std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/towns.json"; }
+std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/towns/towns.json"; }
 
 
 std::string JsonLoader::generatePlayerFileName(const std::string& xuid, const std::string& playerName) {
@@ -167,6 +167,10 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
 std::vector<TownData> JsonLoader::loadTownsFromFile() {
     std::vector<TownData> towns;
     std::string           townsPath = getTownsBaseDir();
+
+    // 确保towns目录存在
+    std::string townsDir = townsPath.substr(0, townsPath.find_last_of('/'));
+    ensureDirectoryExists(townsDir);
 
     std::ifstream file(townsPath);
     if (!file.is_open()) {
