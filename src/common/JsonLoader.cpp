@@ -5,6 +5,7 @@
 #include "mod/RLXLand.h"
 #include <fstream>
 #include <ll/api/io/Logger.h>
+#include <ranges>
 
 
 namespace rlx_land {
@@ -15,7 +16,7 @@ std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/tow
 
 
 std::string JsonLoader::generatePlayerFileName(const std::string& xuid, const std::string& playerName) {
-    return xuid + "-" + playerName + ".json";
+    return std::format("{}-{}.json", xuid, playerName);
 }
 
 std::pair<std::string, std::string> JsonLoader::parseFileName(const std::string& fileName) {
@@ -68,20 +69,22 @@ void JsonLoader::deleteOldPlayerFile(const std::string& xuid) {
     std::string landsDir    = getLandsBaseDir();
     auto        playerFiles = scanPlayerFiles();
 
-    for (const auto& file : playerFiles) {
+    auto it = std::ranges::find_if(playerFiles, [&xuid](const std::string& file) {
         auto [parsedXuid, oldName] = parseFileName(file);
-        if (parsedXuid == xuid) {
-            std::string oldPath = landsDir + "/" + file;
-            try {
-                std::filesystem::remove(oldPath);
-            } catch (const std::exception& e) {
-                rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
-                    "Failed to delete old player file {}: {}",
-                    file,
-                    e.what()
-                );
-            }
-            break;
+        return parsedXuid == xuid;
+    });
+
+    if (it != playerFiles.end()) {
+        const auto&           file    = *it;
+        std::filesystem::path oldPath = std::filesystem::path(landsDir) / file;
+        try {
+            std::filesystem::remove(oldPath);
+        } catch (const std::exception& e) {
+            rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
+                "Failed to delete old player file {}: {}",
+                file,
+                e.what()
+            );
         }
     }
 }
@@ -119,7 +122,7 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
     auto playerFiles = scanPlayerFiles();
 
     for (const auto& file : playerFiles) {
-        std::string fullPath = landsDir + "/" + file;
+        std::filesystem::path fullPath = std::filesystem::path(landsDir) / file;
         try {
             std::ifstream fileStream(fullPath);
             if (!fileStream.is_open()) {
@@ -242,8 +245,8 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
                 renamedCount++;
             }
 
-            std::string fileName = generatePlayerFileName(ownerXuid, playerName);
-            std::string fullPath = landsDir + "/" + fileName;
+            std::string           fileName = generatePlayerFileName(ownerXuid, playerName);
+            std::filesystem::path fullPath = std::filesystem::path(landsDir) / fileName;
 
             // 保存单个玩家的数据到文件
             nlohmann::json json;
@@ -330,7 +333,7 @@ std::map<std::string, std::vector<LandData>> JsonLoader::loadExistingPlayerData(
     for (const auto& file : playerFiles) {
         auto [xuid, playerName] = parseFileName(file);
         if (!xuid.empty()) {
-            std::string fullPath = landsDir + "/" + file;
+            std::filesystem::path fullPath = std::filesystem::path(landsDir) / file;
             try {
                 // 直接从文件加载单个玩家的数据
                 std::vector<LandData> playerLands;
@@ -410,14 +413,10 @@ bool JsonLoader::needsFileRename(const std::string& xuid, const std::string& cur
     std::string landsDir    = getLandsBaseDir();
     auto        playerFiles = scanPlayerFiles();
 
-    for (const auto& file : playerFiles) {
+    return std::ranges::any_of(playerFiles, [&xuid, &currentName](const std::string& file) {
         auto [parsedXuid, oldName] = parseFileName(file);
-        if (parsedXuid == xuid && oldName != currentName) {
-            return true; // 需要重命名
-        }
-    }
-
-    return false; // 不需要重命名
+        return parsedXuid == xuid && oldName != currentName;
+    });
 }
 
 void JsonLoader::renamePlayerFileIfNeeded(const std::string& xuid, const std::string& newName) {
@@ -428,29 +427,31 @@ void JsonLoader::renamePlayerFileIfNeeded(const std::string& xuid, const std::st
     std::string landsDir    = getLandsBaseDir();
     auto        playerFiles = scanPlayerFiles();
 
-    for (const auto& file : playerFiles) {
+    auto it = std::ranges::find_if(playerFiles, [&xuid, &newName](const std::string& file) {
         auto [parsedXuid, oldName] = parseFileName(file);
+        return parsedXuid == xuid && oldName != newName;
+    });
 
-        if (parsedXuid == xuid && oldName != newName) {
-            std::string oldPath = landsDir + "/" + file;
-            std::string newPath = landsDir + "/" + generatePlayerFileName(xuid, newName);
+    if (it != playerFiles.end()) {
+        const auto& file              = *it;
+        auto [parsedXuid, oldName]    = parseFileName(file);
+        std::filesystem::path oldPath = std::filesystem::path(landsDir) / file;
+        std::filesystem::path newPath = std::filesystem::path(landsDir) / generatePlayerFileName(xuid, newName);
 
-            try {
-                std::filesystem::rename(oldPath, newPath);
-                rlx_land::RLXLand::getInstance().getSelf().getLogger().info(
-                    "Renamed player file from {} to {}",
-                    file,
-                    generatePlayerFileName(xuid, newName)
-                );
-            } catch (const std::exception& e) {
-                rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
-                    "Failed to rename player file from {} to {}: {}",
-                    oldPath,
-                    newPath,
-                    e.what()
-                );
-            }
-            break;
+        try {
+            std::filesystem::rename(oldPath, newPath);
+            rlx_land::RLXLand::getInstance().getSelf().getLogger().info(
+                "Renamed player file from {} to {}",
+                file,
+                generatePlayerFileName(xuid, newName)
+            );
+        } catch (const std::exception& e) {
+            rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
+                "Failed to rename player file from {} to {}: {}",
+                oldPath,
+                newPath,
+                e.what()
+            );
         }
     }
 }
