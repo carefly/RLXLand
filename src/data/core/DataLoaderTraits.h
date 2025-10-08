@@ -1,9 +1,10 @@
 #pragma once
-#include "../land/LandCore.h"
-#include "../town/TownCore.h"
 #include "common/JsonLoader.h"
+#include "data/land/LandCore.h"
+#include "data/town/TownCore.h"
 #include <string>
 #include <vector>
+
 
 namespace rlx_land {
 // 前向声明避免循环依赖

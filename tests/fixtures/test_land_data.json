@@ -1,0 +1,91 @@
+{
+    "test_lands": [
+        {
+            "id": 1001,
+            "owner_xuid": "test_owner_001",
+            "owner_name": "TestOwnerOne",
+            "x": 1000,
+            "y": 64,
+            "z": 1000,
+            "dx": 50,
+            "dz": 50,
+            "dimension": 0,
+            "permission_level": 3,
+            "description": "Test land for basic functionality",
+            "members": [
+                "test_member_001",
+                "test_member_002"
+            ],
+            "created_time": "2024-01-01T00:00:00Z",
+            "last_modified": "2024-01-01T00:00:00Z"
+        },
+        {
+            "id": 1002,
+            "owner_xuid": "test_owner_002",
+            "owner_name": "TestOwnerTwo",
+            "x": 2000,
+            "y": 64,
+            "z": 2000,
+            "dx": 100,
+            "dz": 100,
+            "dimension": 0,
+            "permission_level": 5,
+            "description": "Large test land for performance testing",
+            "members": [],
+            "created_time": "2024-01-02T00:00:00Z",
+            "last_modified": "2024-01-02T00:00:00Z"
+        },
+        {
+            "id": 1003,
+            "owner_xuid": "test_owner_003",
+            "owner_name": "TestOwnerThree",
+            "x": -5000,
+            "y": 64,
+            "z": -5000,
+            "dx": 25,
+            "dz": 25,
+            "dimension": 1,
+            "permission_level": 1,
+            "description": "Test land in different dimension",
+            "members": [
+                "test_member_003"
+            ],
+            "created_time": "2024-01-03T00:00:00Z",
+            "last_modified": "2024-01-03T00:00:00Z"
+        }
+    ],
+    "boundary_test_lands": [
+        {
+            "id": 2001,
+            "owner_xuid": "boundary_test_001",
+            "owner_name": "BoundaryTestOne",
+            "x": 99999,
+            "y": 64,
+            "z": 0,
+            "dx": 1,
+            "dz": 1,
+            "dimension": 0,
+            "permission_level": 3,
+            "description": "Land at positive boundary",
+            "members": [],
+            "created_time": "2024-01-05T00:00:00Z",
+            "last_modified": "2024-01-05T00:00:00Z"
+        },
+        {
+            "id": 2002,
+            "owner_xuid": "boundary_test_002",
+            "owner_name": "BoundaryTestTwo",
+            "x": -99999,
+            "y": 64,
+            "z": 0,
+            "dx": 1,
+            "dz": 1,
+            "dimension": 0,
+            "permission_level": 3,
+            "description": "Land at negative boundary",
+            "members": [],
+            "created_time": "2024-01-06T00:00:00Z",
+            "last_modified": "2024-01-06T00:00:00Z"
+        }
+    ]
+}

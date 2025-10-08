@@ -1,5 +1,7 @@
-#include "BaseInformation.h"
-#include "common/LeviLaminaAPI.h"
+#include "data/core/BaseInformation.h"
+#include "mocks/MockLeviLaminaAPI.h"
+
+#ifdef BUILDING_TESTS
 
 namespace rlx_land {
 
@@ -18,9 +20,12 @@ std::string BaseInformation::getMembers() const {
     std::string memberNames;
     for (size_t i = 0; i < data.memberXuids.size(); ++i) {
         if (i > 0) memberNames += ",";
-        memberNames += LeviLaminaAPI::getPlayerNameByXuid(data.memberXuids[i]);
+        // 使用模拟API而不是真实的LeviLaminaAPI
+        memberNames += test::mock::MockLeviLaminaAPI::getPlayerNameByXuid(data.memberXuids[i]);
     }
     return memberNames;
 }
 
 } // namespace rlx_land
+
+#endif // BUILDING_TESTS
