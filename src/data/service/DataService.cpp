@@ -35,7 +35,7 @@ TownInformation* DataService::findTownByName(const std::string& name) {
 template <typename T>
 void DataService::loadItems() {
     using Traits = DataLoaderTraits<T>;
-    loadData<T>(Traits::getDefaultFilePath(), getManager<T>(), Traits::getTypeName());
+    loadData<T>(getManager<T>(), Traits::getTypeName());
 }
 
 template <typename T>
@@ -91,16 +91,12 @@ TownInformation* DataService::findTownAt(LONG64 x, LONG64 z, int dimension) {
 
 // 私有模板方法实现
 template <typename T>
-void DataService::loadData(
-    const std::string&                         jsonPath,
-    typename DataLoaderTraits<T>::ManagerType* manager,
-    const std::string&                         typeName
-) {
+void DataService::loadData(typename DataLoaderTraits<T>::ManagerType* manager, const std::string& typeName) {
     using Traits   = DataLoaderTraits<T>;
     using DataType = typename Traits::DataType;
     using InfoType = typename Traits::InfoType;
 
-    std::vector<DataType> items = Traits::loadFromFile(jsonPath);
+    std::vector<DataType> items = Traits::loadFromFile();
 
     RLXLand::getInstance().getSelf().getLogger().info(std::format("load {} {}s from JSON", items.size(), typeName));
 

@@ -71,11 +71,7 @@ private:
 
     // 简化后的模板化通用方法
     template <typename T>
-    void loadData(
-        const std::string&                         jsonPath,
-        typename DataLoaderTraits<T>::ManagerType* manager,
-        const std::string&                         typeName
-    );
+    void loadData(typename DataLoaderTraits<T>::ManagerType* manager, const std::string& typeName);
 
     template <typename T>
     void

@@ -13,9 +13,6 @@ protected:
     std::vector<U*> informationList;
     using Traits = DataLoaderTraits<T>; // 类型别名简化代码
 
-    // 虚函数需要子类实现
-    [[nodiscard]] virtual std::string getFilePath() const = 0;
-
     virtual void initInformation(U* info) = 0;
 
 public:

@@ -17,7 +17,7 @@ BaseDataManager<T, U>::~BaseDataManager() {
 template <typename T, typename U>
 void BaseDataManager<T, U>::create(T data) {
     // 先从文件加载现有数据
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    std::vector<T> items = Traits::loadFromFile();
 
     // 检查ID是否已存在
     auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
@@ -30,7 +30,7 @@ void BaseDataManager<T, U>::create(T data) {
     items.push_back(data);
 
     // 保存回文件
-    Traits::saveToFile(getFilePath(), items);
+    Traits::saveToFile(items);
 
     // 添加到内存中
     auto info = new U(data);
@@ -41,7 +41,7 @@ void BaseDataManager<T, U>::create(T data) {
 template <typename T, typename U>
 void BaseDataManager<T, U>::remove(T data) {
     // 从文件加载现有数据
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    std::vector<T> items = Traits::loadFromFile();
 
     // 查找并删除指定项
     auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
@@ -50,7 +50,7 @@ void BaseDataManager<T, U>::remove(T data) {
         items.erase(it);
 
         // 保存回文件
-        Traits::saveToFile(getFilePath(), items);
+        Traits::saveToFile(items);
 
         // 从内存中删除
         auto memIt = std::find_if(informationList.begin(), informationList.end(), [&data](U* info) {
@@ -71,7 +71,7 @@ template <typename T, typename U>
 void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
     // 在JSON中修改权限
     // 先从文件加载现有数据
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    std::vector<T> items = Traits::loadFromFile();
 
     // 查找并更新指定项
     auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
@@ -80,7 +80,7 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
         it->perm = perm;
 
         // 保存回文件
-        Traits::saveToFile(getFilePath(), items);
+        Traits::saveToFile(items);
     } else {
         throw LandNotFoundException("Item not found to modify permission");
     }
@@ -104,13 +104,13 @@ void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
     // 添加新成员
     info->data.memberXuids.push_back(xuid);
 
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    std::vector<T> items = Traits::loadFromFile();
 
     auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
 
     if (it != items.end()) {
         it->memberXuids = info->data.memberXuids;
-        Traits::saveToFile(getFilePath(), items);
+        Traits::saveToFile(items);
     }
 }
 
@@ -129,13 +129,13 @@ void BaseDataManager<T, U>::removeMember(U* info, const std::string& playerName)
 
     info->data.memberXuids.erase(it);
 
-    std::vector<T> items = Traits::loadFromFile(getFilePath());
+    std::vector<T> items = Traits::loadFromFile();
 
     auto it2 = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
 
     if (it2 != items.end()) {
         it2->memberXuids = info->data.memberXuids;
-        Traits::saveToFile(getFilePath(), items);
+        Traits::saveToFile(items);
     }
 }
 

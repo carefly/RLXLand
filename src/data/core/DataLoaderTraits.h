@@ -2,7 +2,6 @@
 #include "common/JsonLoader.h"
 #include "data/land/LandCore.h"
 #include "data/town/TownCore.h"
-#include <string>
 #include <vector>
 
 
@@ -26,16 +25,17 @@ struct DataLoaderTraits<LandData> {
     using InfoType    = LandInformation;
     using ManagerType = LandDataManager;
 
-    static std::vector<DataType> loadFromFile(const std::string& filePath) {
-        return JsonLoader::loadLandsFromFile(filePath);
+    static std::vector<DataType> loadFromFile() {
+        // 直接使用新的按玩家加载方法
+        return JsonLoader::loadLandsFromFile();
     }
 
-    static void saveToFile(const std::string& filePath, const std::vector<DataType>& data) {
-        JsonLoader::saveLandsToFile(filePath, data);
+    static void saveToFile(const std::vector<DataType>& data) {
+        // 直接使用新的按玩家保存方法
+        JsonLoader::saveLandsToFile(data);
     }
 
-    static const std::string& getDefaultFilePath() { return JsonLoader::LANDS_JSON_PATH; }
-    static const char*        getTypeName() { return "land"; }
+    static const char* getTypeName() { return "land"; }
 };
 
 // TownData 特化
@@ -45,16 +45,11 @@ struct DataLoaderTraits<TownData> {
     using InfoType    = TownInformation;
     using ManagerType = TownDataManager;
 
-    static std::vector<DataType> loadFromFile(const std::string& filePath) {
-        return JsonLoader::loadTownsFromFile(filePath);
-    }
+    static std::vector<DataType> loadFromFile() { return JsonLoader::loadTownsFromFile(); }
 
-    static void saveToFile(const std::string& filePath, const std::vector<DataType>& data) {
-        JsonLoader::saveTownsToFile(filePath, data);
-    }
+    static void saveToFile(const std::vector<DataType>& data) { JsonLoader::saveTownsToFile(data); }
 
-    static const std::string& getDefaultFilePath() { return JsonLoader::TOWNS_JSON_PATH; }
-    static const char*        getTypeName() { return "town"; }
+    static const char* getTypeName() { return "town"; }
 };
 
 

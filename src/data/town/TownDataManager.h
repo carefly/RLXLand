@@ -10,8 +10,6 @@ namespace rlx_land {
 
 class TownDataManager : public BaseDataManager<TownData, TownInformation> {
 protected:
-    [[nodiscard]] std::string getFilePath() const override { return JsonLoader::TOWNS_JSON_PATH; }
-
     void initInformation(TownInformation* info) override {
         info->mayorName = LeviLaminaAPI::getPlayerNameByXuid(info->td.mayorXuid);
     }
@@ -40,13 +38,13 @@ public:
         }
 
         // 保存到文件
-        std::vector<TownData> towns = JsonLoader::loadTownsFromFile(getFilePath());
+        std::vector<TownData> towns = JsonLoader::loadTownsFromFile();
         auto townIt = std::find_if(towns.begin(), towns.end(), [ti](const TownData& t) { return t.id == ti->td.id; });
 
         if (townIt != towns.end()) {
             townIt->mayorXuid   = ti->td.mayorXuid;
             townIt->memberXuids = ti->td.memberXuids;
-            JsonLoader::saveTownsToFile(getFilePath(), towns);
+            JsonLoader::saveTownsToFile(towns);
         }
 
         // 更新内存中的镇长名
