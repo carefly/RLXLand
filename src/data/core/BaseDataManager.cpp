@@ -54,7 +54,7 @@ void BaseDataManager<T, U>::remove(T data) {
 
         // 从内存中删除
         auto memIt = std::find_if(informationList.begin(), informationList.end(), [&data](U* info) {
-            return info->data.id == data.id;
+            return info->getId() == data.id;
         });
 
         if (memIt != informationList.end()) {
@@ -74,7 +74,7 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
     std::vector<T> items = Traits::loadFromFile();
 
     // 查找并更新指定项
-    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->getId(); });
 
     if (it != items.end()) {
         it->perm = perm;
@@ -86,7 +86,7 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
     }
 
     // 更新内存中的权限
-    info->data.perm = perm;
+    info->setPermission(perm);
 }
 
 template <typename T, typename U>
@@ -97,19 +97,20 @@ void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
     if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
 
     // 检查玩家是否已经是成员
-    if (std::find(info->data.memberXuids.begin(), info->data.memberXuids.end(), xuid) != info->data.memberXuids.end()) {
+    const auto& members = info->getMemberXuids();
+    if (std::find(members.begin(), members.end(), xuid) != members.end()) {
         throw DuplicateException("Player is already a member: " + playerName);
     }
 
     // 添加新成员
-    info->data.memberXuids.push_back(xuid);
+    info->addMember(xuid);
 
     std::vector<T> items = Traits::loadFromFile();
 
-    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+    auto it = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->getId(); });
 
     if (it != items.end()) {
-        it->memberXuids = info->data.memberXuids;
+        it->memberXuids = info->getMemberXuids();
         Traits::saveToFile(items);
     }
 }
@@ -122,19 +123,20 @@ void BaseDataManager<T, U>::removeMember(U* info, const std::string& playerName)
     if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
 
     // 查找并移除成员
-    auto it = std::find(info->data.memberXuids.begin(), info->data.memberXuids.end(), xuid);
-    if (it == info->data.memberXuids.end()) {
+    const auto& members = info->getMemberXuids();
+    auto        it      = std::find(members.begin(), members.end(), xuid);
+    if (it == members.end()) {
         throw NotMemberException("Player is not a member: " + playerName);
     }
 
-    info->data.memberXuids.erase(it);
+    info->removeMember(xuid);
 
     std::vector<T> items = Traits::loadFromFile();
 
-    auto it2 = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->data.id; });
+    auto it2 = std::find_if(items.begin(), items.end(), [info](const T& item) { return item.id == info->getId(); });
 
     if (it2 != items.end()) {
-        it2->memberXuids = info->data.memberXuids;
+        it2->memberXuids = info->getMemberXuids();
         Traits::saveToFile(items);
     }
 }
@@ -143,7 +145,7 @@ template <typename T, typename U>
 LONG64 BaseDataManager<T, U>::getMaxId() const {
     LONG64 max = 0;
     for (const auto& itemInfo : informationList) {
-        if (max < itemInfo->data.id) max = itemInfo->data.id;
+        if (max < itemInfo->getId()) max = itemInfo->getId();
     }
     return max;
 }
@@ -151,6 +153,14 @@ LONG64 BaseDataManager<T, U>::getMaxId() const {
 template <typename T, typename U>
 std::vector<U*> BaseDataManager<T, U>::getAllItems() const {
     return informationList;
+}
+
+template <typename T, typename U>
+void BaseDataManager<T, U>::clearAllItems() {
+    for (auto* info : informationList) {
+        delete info;
+    }
+    informationList.clear();
 }
 
 // 显式实例化 - 需要根据实际使用的类型进行调整

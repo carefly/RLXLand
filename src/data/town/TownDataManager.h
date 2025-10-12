@@ -11,7 +11,8 @@ namespace rlx_land {
 class TownDataManager : public BaseDataManager<TownData, TownInformation> {
 protected:
     void initInformation(TownInformation* info) override {
-        info->mayorName = LeviLaminaAPI::getPlayerNameByXuid(info->td.mayorXuid);
+        // 使用新的访问方式
+        info->refreshOwnerName();
     }
 
 public:
@@ -23,32 +24,30 @@ public:
         if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
 
         // 转让镇长职位
-        std::string oldMayorXuid = ti->td.mayorXuid;
-        ti->td.mayorXuid         = xuid;
+        std::string oldMayorXuid = ti->getMayorXuid();
+        ti->setMayorXuid(xuid);
 
         // 将原镇长添加为成员（如果还不是成员）
-        if (std::find(ti->td.memberXuids.begin(), ti->td.memberXuids.end(), oldMayorXuid) == ti->td.memberXuids.end()) {
-            ti->td.memberXuids.push_back(oldMayorXuid);
+        const auto& members = ti->getMemberXuids();
+        if (std::find(members.begin(), members.end(), oldMayorXuid) == members.end()) {
+            ti->addMember(oldMayorXuid);
         }
 
         // 从成员列表中移除新镇长
-        auto it = std::find(ti->td.memberXuids.begin(), ti->td.memberXuids.end(), xuid);
-        if (it != ti->td.memberXuids.end()) {
-            ti->td.memberXuids.erase(it);
-        }
+        ti->removeMember(xuid);
 
         // 保存到文件
         std::vector<TownData> towns = JsonLoader::loadTownsFromFile();
-        auto townIt = std::find_if(towns.begin(), towns.end(), [ti](const TownData& t) { return t.id == ti->td.id; });
+        auto townIt = std::find_if(towns.begin(), towns.end(), [ti](const TownData& t) { return t.id == ti->getId(); });
 
         if (townIt != towns.end()) {
-            townIt->mayorXuid   = ti->td.mayorXuid;
-            townIt->memberXuids = ti->td.memberXuids;
+            townIt->mayorXuid   = ti->getMayorXuid();
+            townIt->memberXuids = ti->getMemberXuids();
             JsonLoader::saveTownsToFile(towns);
         }
 
-        // 更新内存中的镇长名
-        ti->mayorName = LeviLaminaAPI::getPlayerNameByXuid(xuid);
+        // 更新内存中的镇长名（通过 setMayorXuid 已经自动更新）
+        // ti->refreshOwnerName(); // 已经在 setMayorXuid 中调用
     }
 };
 

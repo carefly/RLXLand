@@ -1,9 +1,17 @@
+#include <format>
+#ifndef TESTING
+#include "mod/RLXLand.h"
+#else
+// 测试环境下的简单日志实现
+#include <iostream>
+#define LOG_INFO(msg) std::cout << "[INFO] " << msg << std::endl
+#endif
+
 #include "DataService.h"
 #include "common/JsonLoader.h"
-#include "common/LeviLaminaAPI.h"
 #include "data/land/LandCore.h"
 #include "data/spatial/SpatialMap.h"
-#include "mod/RLXLand.h"
+#include "mod/town/permissions/TownPermissionChecker.h"
 #include <memory>
 
 
@@ -26,9 +34,44 @@ void DataService::transferTownMayor(TownInformation* ti, const std::string& play
 TownInformation* DataService::findTownByName(const std::string& name) {
     auto towns = getInstance()->townManager->getAllItems();
     for (const auto& townInfo : towns) {
-        if (townInfo->td.name == name) return townInfo;
+        if (townInfo->getTownName() == name) return townInfo;
     }
     return nullptr;
+}
+
+void DataService::clearAllData() {
+#ifdef TESTING
+    LOG_INFO("Clearing all data for testing");
+#else
+    RLXLand::getInstance().getSelf().getLogger().info("Clearing all data");
+#endif
+
+    // 1. 先清理空间索引结构（不删除对象）
+    // 清理Land空间地图
+    SpatialMap<LandInformation>::getInstance()->clearAll();
+
+    // 清理Town空间地图
+    SpatialMap<TownInformation>::getInstance()->clearAll();
+
+    // 2. 再清理数据管理器（负责实际删除对象）
+    // 清理Land数据
+    landManager->clearAllItems();
+
+    // 清理Town数据
+    townManager->clearAllItems();
+
+    // 3. 清理JSON文件
+    // 清空Land数据文件
+    DataLoaderTraits<LandData>::saveToFile(std::vector<LandData>());
+
+    // 清空Town数据文件
+    DataLoaderTraits<TownData>::saveToFile(std::vector<TownData>());
+
+#ifdef TESTING
+    LOG_INFO("All data cleared successfully");
+#else
+    RLXLand::getInstance().getSelf().getLogger().info("All data cleared successfully");
+#endif
 }
 
 // 统一的公共接口实现
@@ -39,7 +82,12 @@ void DataService::loadItems() {
 }
 
 template <typename T>
-void DataService::createItem(typename DataLoaderTraits<T>::DataType data) {
+void DataService::createItem(typename DataLoaderTraits<T>::DataType data, const PlayerInfo& playerInfo) {
+    if constexpr (std::is_same_v<T, LandData>) {
+        validateLandCreation(data, playerInfo);
+    } else if constexpr (std::is_same_v<T, TownData>) {
+        validateTownCreation(data, playerInfo);
+    }
     createItemInternal<T>(std::move(data), getManager<T>());
 }
 
@@ -98,15 +146,19 @@ void DataService::loadData(typename DataLoaderTraits<T>::ManagerType* manager, c
 
     std::vector<DataType> items = Traits::loadFromFile();
 
+#ifdef TESTING
+    LOG_INFO(std::format("load {}s from JSON", typeName));
+#else
     RLXLand::getInstance().getSelf().getLogger().info(std::format("load {} {}s from JSON", items.size(), typeName));
+#endif
 
     for (const auto& item : items) {
         // Land 特有的范围检查
         if constexpr (std::is_same_v<T, LandData>) {
             LONG64 x1 = item.x;
-            LONG64 x2 = item.dx;
+            LONG64 x2 = item.x_end; // 使用新的终点坐标字段
             LONG64 z1 = item.z;
-            LONG64 z2 = item.dz;
+            LONG64 z2 = item.z_end; // 使用新的终点坐标字段
 
             if (x1 >= LAND_RANGE || x1 <= -LAND_RANGE || x2 >= LAND_RANGE || x2 <= -LAND_RANGE || z1 >= LAND_RANGE
                 || z1 <= -LAND_RANGE || z2 >= LAND_RANGE || z2 <= -LAND_RANGE)
@@ -116,16 +168,14 @@ void DataService::loadData(typename DataLoaderTraits<T>::ManagerType* manager, c
         auto info = new InfoType(item);
 
         // 初始化特定信息
-        if constexpr (std::is_same_v<InfoType, LandInformation>) {
-            info->ownerName = LeviLaminaAPI::getPlayerNameByXuid(item.ownerXuid);
-        } else if constexpr (std::is_same_v<InfoType, TownInformation>) {
-            info->mayorName = LeviLaminaAPI::getPlayerNameByXuid(item.mayorXuid);
+        if constexpr (std::is_same_v<InfoType, LandInformation> || std::is_same_v<InfoType, TownInformation>) {
+            info->refreshOwnerName();
         }
 
         manager->getAllItems().push_back(info);
 
         // 更新空间地图
-        updateSpatialMapRange<InfoType>(info, item.x, item.z, item.dx, item.dz, item.d);
+        updateSpatialMapRange<InfoType>(info, item.x, item.z, item.x_end, item.z_end, item.d);
     }
 }
 
@@ -142,7 +192,14 @@ void DataService::createItemInternal(
     auto items = manager->getAllItems();
     if (!items.empty()) {
         InfoType* info = items.back();
-        updateSpatialMapRange<InfoType>(info, data.x, data.z, data.dx, data.dz, data.d);
+        updateSpatialMapRange<InfoType>(
+            info,
+            info->getX(),
+            info->getZ(),
+            info->getXEnd(),
+            info->getZEnd(),
+            info->getDimension()
+        );
     }
 }
 
@@ -155,7 +212,7 @@ void DataService::deleteItemInternal(
 
     manager->remove(std::move(data));
 
-    updateSpatialMapRange<InfoType>(nullptr, data.x, data.z, data.dx, data.dz, data.d);
+    updateSpatialMapRange<InfoType>(nullptr, data.x, data.z, data.x_end, data.z_end, data.d);
 }
 
 template <typename T>
@@ -202,7 +259,7 @@ void DataService::updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2
 
 // 显式模板实例化
 template void   DataService::loadItems<LandData>();
-template void   DataService::createItem<LandData>(LandData data);
+template void   DataService::createItem<LandData>(LandData data, const PlayerInfo& playerInfo);
 template void   DataService::deleteItem<LandData>(LandData data);
 template void   DataService::modifyItemPermission<LandData>(LandInformation* info, int perm);
 template void   DataService::addItemMember<LandData>(LandInformation* info, const std::string& playerName);
@@ -211,7 +268,7 @@ template LONG64 DataService::getMaxId<LandData>();
 template std::vector<LandInformation*> DataService::getAllItems<LandData>();
 
 template void   DataService::loadItems<TownData>();
-template void   DataService::createItem<TownData>(TownData data);
+template void   DataService::createItem<TownData>(TownData data, const PlayerInfo& playerInfo);
 template void   DataService::deleteItem<TownData>(TownData data);
 template void   DataService::modifyItemPermission<TownData>(TownInformation* info, int perm);
 template void   DataService::addItemMember<TownData>(TownInformation* info, const std::string& playerName);
@@ -230,5 +287,86 @@ template void DataService::updateSpatialMapRange<
 // 空间查询方法的模板实例化
 template LandInformation* DataService::findItemAt<LandData>(LONG64 x, LONG64 z, int dimension);
 template TownInformation* DataService::findItemAt<TownData>(LONG64 x, LONG64 z, int dimension);
+
+// 验证方法实现
+void DataService::validateLandCreation(const LandData& data, const PlayerInfo& playerInfo) {
+    validateCoordinatesRange(data);
+    validateTownPermission(data, playerInfo);
+    validateLandConflict(data);
+}
+
+void DataService::validateCoordinatesRange(const LandData& data) {
+    // 检查是否超出LAND_RANGE范围
+    if (data.x >= LAND_RANGE || data.x <= -LAND_RANGE || data.x_end >= LAND_RANGE || data.x_end <= -LAND_RANGE
+        || data.z >= LAND_RANGE || data.z <= -LAND_RANGE || data.z_end >= LAND_RANGE || data.z_end <= -LAND_RANGE) {
+        throw LandOutOfRangeException(std::format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
+    }
+
+    if ((abs(data.x) > LAND_RANGE) || (abs(data.z) > LAND_RANGE)) {
+        throw LandOutOfRangeException(std::format("领地不能超过 {} 格", LAND_RANGE));
+    }
+}
+
+void DataService::validateTownPermission(const LandData& data, const PlayerInfo& playerInfo) {
+    // 检查整个领地区域是否可以圈地（确保所有坐标点都有权限）
+    for (int xi = data.x; xi <= data.x_end; xi++) {
+        for (int zi = data.z; zi <= data.z_end; zi++) {
+            if (!TownPermissionChecker::canClaimLand(playerInfo, xi, zi, data.d)) {
+                throw LandPermissionException("您没有在此区域圈地的权限");
+            }
+        }
+    }
+}
+
+void DataService::validateLandConflict(const LandData& data) {
+    for (int xi = data.x; xi <= data.x_end; xi++) {
+        for (int zi = data.z; zi <= data.z_end; zi++) {
+            auto li = findLandAt(xi, zi, data.d);
+            if (li != nullptr) {
+                throw LandConflictException(
+                    std::format("领地冲突 x:{} z:{} 领地所有者 {} 请重新圈地", xi, zi, li->getOwnerName())
+                );
+            }
+        }
+    }
+}
+
+// Town验证方法实现
+void DataService::validateTownCreation(const TownData& data, const PlayerInfo& playerInfo) {
+    validateTownCoordinatesRange(data);
+    validateOperatorPermission(playerInfo);
+    validateTownOverlap(data);
+}
+
+void DataService::validateTownCoordinatesRange(const TownData& data) {
+    // 检查是否超出LAND_RANGE范围
+    if (data.x >= LAND_RANGE || data.x <= -LAND_RANGE || data.x_end >= LAND_RANGE || data.x_end <= -LAND_RANGE
+        || data.z >= LAND_RANGE || data.z <= -LAND_RANGE || data.z_end >= LAND_RANGE || data.z_end <= -LAND_RANGE) {
+        throw TownOutOfRangeException(std::format("城镇坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
+    }
+
+    if ((abs(data.x) > LAND_RANGE) || (abs(data.z) > LAND_RANGE)) {
+        throw TownOutOfRangeException(std::format("城镇不能超过 {} 格", LAND_RANGE));
+    }
+}
+
+void DataService::validateOperatorPermission(const PlayerInfo& playerInfo) {
+    if (!playerInfo.isOperator) {
+        throw TownPermissionException("只有腐竹可以创建城镇");
+    }
+}
+
+void DataService::validateTownOverlap(const TownData& data) {
+    for (int xi = data.x; xi <= data.x_end; xi++) {
+        for (int zi = data.z; zi <= data.z_end; zi++) {
+            auto town = findTownAt(xi, zi, data.d);
+            if (town != nullptr) {
+                throw TownConflictException(
+                    std::format("城镇冲突 x:{} z:{} 城镇所有者 {} 请重新选择区域", xi, zi, town->getOwnerName())
+                );
+            }
+        }
+    }
+}
 
 } // namespace rlx_land

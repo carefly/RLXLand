@@ -15,6 +15,8 @@ void TestEnvironment::initialize() {
         return;
     }
 
+    std::cout << "Start initialize test environment." << std::endl;
+
     // 设置测试数据路径
     m_testDataPath = std::filesystem::current_path().string() + "/tests/fixtures";
     m_tempDataPath = std::filesystem::current_path().string() + "/tests/temp";
@@ -22,6 +24,9 @@ void TestEnvironment::initialize() {
     // 创建必要的目录
     std::filesystem::create_directories(m_testDataPath);
     std::filesystem::create_directories(m_tempDataPath);
+
+    // 清理默认lands文件夹数据
+    cleanupDefaultLandsFolder();
 
     // 设置模拟环境
     setupMockLeviLamina();
@@ -68,6 +73,20 @@ void TestEnvironment::setupMockLeviLamina() {
 void TestEnvironment::setupMockServer() {
     // 模拟服务器环境设置
     // 这里可以设置必要的模拟服务器配置
+}
+
+void TestEnvironment::cleanupDefaultLandsFolder() {
+    // 清理默认的lands文件夹数据
+    std::string landsDir = "../RLXModeResources/data/lands";
+
+    try {
+        if (std::filesystem::exists(landsDir)) {
+            std::filesystem::remove_all(landsDir);
+            std::cout << "Cleaned up default lands folder: " << landsDir << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Warning: Failed to cleanup default lands folder: " << e.what() << std::endl;
+    }
 }
 
 } // namespace rlx_land::test

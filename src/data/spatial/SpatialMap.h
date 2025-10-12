@@ -29,6 +29,7 @@ private:
 
     InfoType* find(LONG64 coordx, LONG64 coordz, int d);
     void      set(InfoType* info, LONG64 xi, LONG64 zi, int d);
+    void      clearAll(); // 清理所有空间地图数据
 
     BigMap<InfoType>* map[20][20][3] = {};
 };
@@ -103,11 +104,6 @@ InfoType* SmallMap<InfoType>::getInfo(int sx, int sz) {
 
 template <typename InfoType>
 SmallMap<InfoType>::~SmallMap() {
-    for (int i = 0; i < size * size; i++) {
-        if (map[i] != nullptr) {
-            delete map[i];
-        }
-    }
     delete[] map;
 }
 
@@ -134,6 +130,7 @@ MiddleMap<InfoType>::~MiddleMap() {
     for (int i = 0; i < size * size; i++) {
         if (map[i] != nullptr) {
             delete map[i];
+            map[i] = nullptr;
         }
     }
     delete[] map;
@@ -159,9 +156,12 @@ MiddleMap<InfoType>* BigMap<InfoType>::getMap(int mx, int mz) {
 
 template <typename InfoType>
 BigMap<InfoType>::~BigMap() {
+    // 注意：不删除 MiddleMap 对象中的 InfoType 对象
+    // 只清理 MiddleMap 对象本身
     for (int i = 0; i < size * size; i++) {
         if (map[i] != nullptr) {
-            delete map[i];
+            delete map[i]; // 删除 MiddleMap 对象
+            map[i] = nullptr;
         }
     }
     delete[] map;
@@ -245,6 +245,20 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
     }
 
     smallMap->setInfo((int)x, (int)z, info);
+}
+
+template <typename InfoType>
+void SpatialMap<InfoType>::clearAll() {
+    for (int x = 0; x < 20; x++) {
+        for (int z = 0; z < 20; z++) {
+            for (int d = 0; d < 3; d++) {
+                if (map[x][z][d] != nullptr) {
+                    delete map[x][z][d];
+                    map[x][z][d] = nullptr;
+                }
+            }
+        }
+    }
 }
 
 } // namespace rlx_land

@@ -102,11 +102,11 @@ bool LandPermissionChecker::hasPerm(Player* p, Vec3 pos, int perm) {
     // 情况1: 玩家在领地内（最高优先级）
     if (nullptr != land) {
         // 检查玩家是否是领地有权限者或者拥有相应权限
-        if (land->hasBasicPermission(p->getXuid()) || (land->ld.perm & perm)) {
+        if (land->hasBasicPermission(p->getXuid()) || (land->getPermission() & perm)) {
             return true;
         } else {
             // 领地内但没有权限
-            NoticePerm(p, land->ownerName, perm);
+            NoticePerm(p, land->getOwnerName(), perm);
             return false;
         }
     }
@@ -123,11 +123,11 @@ bool LandPermissionChecker::hasPerm(Player* p, Vec3 pos, int perm) {
                 return true;
             } else {
                 // 玩家是城镇访客，检查城镇访客权限设置
-                if (town->td.perm & perm) {
+                if (town->getPermission() & perm) {
                     return true;
                 } else {
                     // 城镇访客没有相应权限
-                    NoticePerm(p, town->td.name, perm);
+                    NoticePerm(p, town->getTownName(), perm);
                     return false;
                 }
             }
@@ -162,7 +162,7 @@ bool LandPermissionChecker::canHurt(Actor& actor, ActorDamageSource const& sourc
         }
     }
 
-    if (li != NULL && ((int)ActorType::VillagerBase == typeMasked) && !(li->ld.perm & PERM_VILLAGER_ATK)) {
+    if (li != NULL && ((int)ActorType::VillagerBase == typeMasked) && !(li->getPermission() & PERM_VILLAGER_ATK)) {
 
         if (nullptr != sp) {
             if (rlx_land::PermissionService::getInstance().isOperator(sp)) return true;

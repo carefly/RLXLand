@@ -13,6 +13,15 @@
 
 namespace rlx_land {
 
+// 玩家信息结构体，用于验证而不依赖Player类
+struct PlayerInfo {
+    std::string xuid;
+    std::string name;
+    bool        isOperator;
+
+    PlayerInfo(const std::string& x, const std::string& n, bool isOp = false) : xuid(x), name(n), isOperator(isOp) {}
+};
+
 class DataService {
 public:
     static std::shared_ptr<DataService> getInstance();
@@ -21,7 +30,7 @@ public:
     void loadItems();
 
     template <typename T>
-    void createItem(typename DataLoaderTraits<T>::DataType data);
+    void createItem(typename DataLoaderTraits<T>::DataType data, const PlayerInfo& playerInfo);
 
     template <typename T>
     void deleteItem(typename DataLoaderTraits<T>::DataType data);
@@ -52,6 +61,10 @@ public:
     // Town 特有的方法（无法统一的方法）
     void             transferTownMayor(TownInformation* ti, const std::string& playerName);
     TownInformation* findTownByName(const std::string& name);
+
+    // 测试专用方法 - 清理所有数据
+    void clearAllData();
+
 
 private:
     std::unique_ptr<LandDataManager> landManager;
@@ -108,6 +121,20 @@ private:
 
     template <typename U>
     void updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
+
+    // 验证方法（私有）
+    void validateLandCreation(const LandData& data, const PlayerInfo& playerInfo);
+    void validateTownCreation(const TownData& data, const PlayerInfo& playerInfo);
+
+    // Land验证方法
+    void validateCoordinatesRange(const LandData& data);
+    void validateTownPermission(const LandData& data, const PlayerInfo& playerInfo);
+    void validateLandConflict(const LandData& data);
+
+    // Town验证方法
+    void validateTownCoordinatesRange(const TownData& data);
+    void validateOperatorPermission(const PlayerInfo& playerInfo);
+    void validateTownOverlap(const TownData& data);
 };
 
 } // namespace rlx_land

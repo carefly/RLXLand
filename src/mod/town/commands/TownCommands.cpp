@@ -70,7 +70,7 @@ void TownCommands::registerCommands() {
                 // 检查城镇名称是否已存在
                 bool townExists = false;
                 for (auto town : DataService::getInstance()->getAllItems<TownData>()) {
-                    if (town->td.name == townName) {
+                    if (town->getTownName() == townName) {
                         townExists = true;
                         break;
                     }
@@ -91,18 +91,18 @@ void TownCommands::registerCommands() {
                 }
 
                 // 获取坐标参数或使用默认值
-                int x, z, dx, dz;
+                int x, z, x_end, z_end;
                 if (param.X != 0 || param.Z != 0 || param.DX != 0 || param.DZ != 0) {
-                    x  = min(param.X, param.DX);
-                    z  = min(param.Z, param.DZ);
-                    dx = max(param.X, param.DX);
-                    dz = max(param.Z, param.DZ);
+                    x     = min(param.X, param.DX);
+                    z     = min(param.Z, param.DZ);
+                    x_end = max(param.X, param.DX);
+                    z_end = max(param.Z, param.DZ);
                 } else {
                     // 使用默认值（以玩家位置为中心的100x100区域）
-                    x  = (int)sp->getPosition().x - 50;
-                    z  = (int)sp->getPosition().z - 50;
-                    dx = x + 100;
-                    dz = z + 100;
+                    x     = (int)sp->getPosition().x - 50;
+                    z     = (int)sp->getPosition().z - 50;
+                    x_end = x + 100;
+                    z_end = z + 100;
                 }
 
                 // 创建城镇数据
@@ -114,17 +114,34 @@ void TownCommands::registerCommands() {
                 data.perm        = 0; // 默认权限
                 data.x           = x;
                 data.z           = z;
-                data.dx          = dx;
-                data.dz          = dz;
+                data.x_end       = x_end;
+                data.z_end       = z_end;
                 data.d           = sp->getDimensionId();
                 data.description = "城镇 " + townName;
 
-                // 创建城镇
-                DataService::getInstance()->createItem<TownData>(data);
+                try {
+                    // 创建PlayerInfo结构
+                    PlayerInfo playerInfo(
+                        sp->getXuid(),
+                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
+                        PermissionService::getInstance().isOperator(sp)
+                    );
 
-                std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
-                output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
-                break;
+                    // 使用统一的createItem方法创建城镇
+                    DataService::getInstance()->createItem<TownData>(data, playerInfo);
+
+                    std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
+                    output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
+                } catch (const TownOutOfRangeException& e) {
+                    output.error(e.what());
+                } catch (const TownPermissionException& e) {
+                    output.error(e.what());
+                } catch (const TownConflictException& e) {
+                    output.error(e.what());
+                } catch (const std::exception& e) {
+                    output.error(format("创建城镇时发生错误: {}", e.what()));
+                }
+                return;
             }
             case TownCommandBasicOperation::remove: {
                 if (townName.empty()) {
@@ -134,7 +151,7 @@ void TownCommands::registerCommands() {
 
                 TownInformation* town = nullptr;
                 for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
-                    if (t->td.name == townName) {
+                    if (t->getTownName() == townName) {
                         town = t;
                         break;
                     }
@@ -144,7 +161,10 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                DataService::getInstance()->deleteItem<TownData>(town->td);
+                // 创建一个临时的 TownData 用于删除
+                TownData tempData;
+                tempData.id = town->getId();
+                DataService::getInstance()->deleteItem<TownData>(tempData);
 
                 output.success("删除城镇: " + townName);
                 break;
@@ -154,7 +174,7 @@ void TownCommands::registerCommands() {
 
                 std::string townList = "城镇列表:\n";
                 for (auto town : towns) {
-                    townList += "- " + town->td.name + " (镇长: " + town->mayorName + ")\n";
+                    townList += "- " + town->getTownName() + " (镇长: " + town->getOwnerName() + ")\n";
                 }
                 output.success(townList);
                 break;
@@ -167,7 +187,7 @@ void TownCommands::registerCommands() {
 
                 TownInformation* town = nullptr;
                 for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
-                    if (t->td.name == townName) {
+                    if (t->getTownName() == townName) {
                         town = t;
                         break;
                     }
@@ -334,10 +354,10 @@ void TownCommands::registerCommands() {
                 }
 
                 std::string info  = "当前位置所在城镇信息:\n";
-                info             += "城镇名称: " + town->td.name + "\n";
-                info             += "镇长: " + town->mayorName + "\n";
+                info             += "城镇名称: " + town->getTownName() + "\n";
+                info             += "镇长: " + town->getOwnerName() + "\n";
                 info             += "成员: " + town->getMembers() + "\n";
-                info             += "权限值: " + std::to_string(town->td.perm) + "\n";
+                info             += "权限值: " + std::to_string(town->getPermission()) + "\n";
                 output.success(info);
                 break;
             }

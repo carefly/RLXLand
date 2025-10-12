@@ -6,14 +6,12 @@
 namespace rlx_land {
 
 // 在测试环境中重写LandInformation构造函数
-LandInformation::LandInformation(LandData ld) : BaseInformation(static_cast<BaseData&>(ld)), ld(std::move(ld)) {
+LandInformation::LandInformation(LandData ld) : BaseInformation(static_cast<BaseData&>(ld)), landData(std::move(ld)) {
     // 使用模拟API而不是真实的LeviLaminaAPI
-    ownerName = test::mock::MockLeviLaminaAPI::getPlayerNameByXuid(this->ld.ownerXuid);
+    setOwnerName(test::mock::MockLeviLaminaAPI::getPlayerNameByXuid(this->landData.ownerXuid));
 }
 
-bool LandInformation::checkIsOwner(const std::string& xuid) const {
-    return static_cast<const LandData&>(data).ownerXuid == xuid;
-}
+bool LandInformation::checkIsOwner(const std::string& xuid) const { return landData.ownerXuid == xuid; }
 
 } // namespace rlx_land
 

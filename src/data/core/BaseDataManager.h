@@ -41,6 +41,9 @@ public:
 
     // 获取所有项
     std::vector<U*> getAllItems() const;
+
+    // 清理所有数据（测试专用）
+    void clearAllItems();
 };
 
 } // namespace rlx_land

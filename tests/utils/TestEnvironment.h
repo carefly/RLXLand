@@ -20,6 +20,9 @@ public:
     void setupMockLeviLamina();
     void setupMockServer();
 
+    // 清理方法
+    void cleanupDefaultLandsFolder();
+
 private:
     TestEnvironment() = default;
     std::string m_testDataPath;

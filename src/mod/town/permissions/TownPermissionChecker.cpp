@@ -1,23 +1,20 @@
 #include "TownPermissionChecker.h"
 #include "data/service/DataService.h"
-#include "service/PermissionService.h"
 
-
+#ifndef TESTING
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
 #include <ll/api/event/ListenerBase.h>
 #include <ll/api/service/Bedrock.h>
 #include <mc/server/ServerPlayer.h>
+#endif
 
 using namespace std;
 
 namespace rlx_land {
 
-// 检查玩家是否可以在指定位置圈地
-bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) {
-    // 检查玩家是否可以在指定位置圈地
-    // 1. 如果在Wilderness中，允许圈地
-    // 2. 如果在Town中，玩家必须是Town成员
+// 检查玩家是否可以在指定位置圈地（不依赖Player的重载版本）
+bool TownPermissionChecker::canClaimLand(const PlayerInfo& playerInfo, int x, int z, int dim) {
 
     auto town = DataService::getInstance()->findTownAt(x, z, dim);
 
@@ -26,9 +23,8 @@ bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) 
         return true;
     }
 
-    // 如果在Town中，玩家必须是Town的成员或镇长
-    if (town->hasBasicPermission(player->getXuid()) || town->isOwner(player->getXuid())
-        || rlx_land::PermissionService::getInstance().isOperator(player)) {
+    // 如果在Town中，玩家必须是Town的成员（包括镇长）
+    if (town->hasBasicPermission(playerInfo.xuid) || playerInfo.isOperator) {
         return true;
     }
 
@@ -37,20 +33,28 @@ bool TownPermissionChecker::canClaimLand(Player* player, int x, int z, int dim) 
 }
 
 // 检查玩家在指定位置是否有权限
-bool TownPermissionChecker::hasTownPerm(Player* player, Vec3 pos, int perm) {
+bool TownPermissionChecker::hasTownPerm(const PlayerInfo& playerInfo, int x, int z, int, int dim, int perm) {
     // 检查玩家在指定位置是否有权限
-    auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, (int)pos.y);
-
-    // 检查是否为Town的成员或镇长
-    if (town && (town->isOwner(player->getXuid()) || town->hasBasicPermission(player->getXuid()))) {
-        // 是Town成员，检查Town权限
-        if (town->td.perm & perm) {
-            return true;
-        }
-    }
+    auto town = DataService::getInstance()->findTownAt(x, z, dim);
 
     // 检查玩家是否具有全局操作权限（腐竹）
-    if (rlx_land::PermissionService::getInstance().isOperator(player)) {
+    if (playerInfo.isOperator) {
+        return true;
+    }
+
+    // 如果没有Town，则默认允许
+    if (town == nullptr) {
+        return true;
+    }
+
+    // 检查是否为Town的成员或镇长（包括镇长）
+    if (town->hasBasicPermission(playerInfo.xuid)) {
+        // 是Town成员（包括镇长），默认拥有所有权限
+        return true;
+    }
+
+    // 非成员玩家，检查Town的权限设置
+    if (town->getPermission() & perm) {
         return true;
     }
 

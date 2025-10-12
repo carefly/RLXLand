@@ -142,57 +142,18 @@ void LandCommands::registerCommands() {
 
                 if (ita == landBuyA.end() || itb == landBuyB.end()) return;
 
-                int x, z, dx, dz, d;
-                d  = sp->getDimensionId();
-                x  = min(ita->second.first, itb->second.first);
-                dx = max(ita->second.first, itb->second.first);
-                z  = min(ita->second.second, itb->second.second);
-                dz = max(ita->second.second, itb->second.second);
+                int x, z, x_end, z_end, d;
+                d     = sp->getDimensionId();
+                x     = min(ita->second.first, itb->second.first);
+                x_end = max(ita->second.first, itb->second.first);
+                z     = min(ita->second.second, itb->second.second);
+                z_end = max(ita->second.second, itb->second.second);
 
-                int area = (dx - x) * (dz - z);
-
-                // 检查是否超出LAND_RANGE范围
-                if (x >= LAND_RANGE || x <= -LAND_RANGE || dx >= LAND_RANGE || dx <= -LAND_RANGE || z >= LAND_RANGE
-                    || z <= -LAND_RANGE || dz >= LAND_RANGE || dz <= -LAND_RANGE) {
-                    output.error(format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
-                    return;
-                }
-
-                if ((abs(x) > LAND_RANGE) || (abs(z) > LAND_RANGE)) {
-                    output.error(format("领地不能超过 {} 格", LAND_RANGE));
-                    return;
-                }
-
-                // 添加Town权限检查逻辑（符合原始设计意图）
-                bool canClaim = true;
-                // 检查整个领地区域是否可以圈地（确保所有坐标点都有权限）
-                for (int xi = x; xi <= dx; xi++) {
-                    for (int zi = z; zi <= dz; zi++) {
-                        if (!TownPermissionChecker::canClaimLand(sp, xi, zi, d)) {
-                            canClaim = false;
-                            break;
-                        }
-                    }
-                    if (!canClaim) break;
-                }
-
-                if (!canClaim) {
-                    output.error("您没有在此区域圈地的权限");
-                    return;
-                }
+                int area = (x_end - x) * (z_end - z);
 
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
                 landBuyB.erase(xuid);
-
-                for (int xi = x; xi <= dx; xi++)
-                    for (int zi = z; zi <= dz; zi++) {
-                        auto li = DataService::getInstance()->findLandAt(xi, zi, d);
-                        if (NULL != li) {
-                            output.error(format("领地冲突 x:{} z:{} 领地所有者 {} 请重新圈地", xi, zi, li->ownerName));
-                            return;
-                        }
-                    }
 
                 int pay = area;
                 // auto res = RLXMoney::getInstance().addMoney(xuid, -pay);
@@ -204,18 +165,35 @@ void LandCommands::registerCommands() {
                 LandData data;
                 data.x           = x;
                 data.z           = z;
-                data.dx          = dx;
-                data.dz          = dz;
+                data.x_end       = x_end;
+                data.z_end       = z_end;
                 data.ownerXuid   = xuid;
                 data.d           = d;
                 data.perm        = 0;
                 data.description = "";
                 data.memberXuids = {};
                 data.id          = DataService::getMaxId<LandData>() + 1;
-                // 删除townIds字段，因为Land不需要和任何Town关联
-                DataService::getInstance()->createItem<LandData>(data);
 
-                output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
+                try {
+                    // 创建PlayerInfo结构
+                    PlayerInfo playerInfo(
+                        sp->getXuid(),
+                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
+                        PermissionService::getInstance().isOperator(sp)
+                    );
+
+                    // 使用统一的createItem方法创建土地
+                    DataService::getInstance()->createItem<LandData>(data, playerInfo);
+                    output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
+                } catch (const LandOutOfRangeException& e) {
+                    output.error(e.what());
+                } catch (const LandPermissionException& e) {
+                    output.error(e.what());
+                } catch (const LandConflictException& e) {
+                    output.error(e.what());
+                } catch (const std::exception& e) {
+                    output.error(format("创建领地时发生错误: {}", e.what()));
+                }
             } else if (LandCommandBasicOperation::sell == operation) {
                 auto pos = sp->getPosition();
                 auto li  = DataService::getInstance()->findLandAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
@@ -224,9 +202,12 @@ void LandCommands::registerCommands() {
                     output.error("该位置不是你的领地");
                     return;
                 }
-                int pay = (li->ld.dx - li->ld.x) * (li->ld.dz - li->ld.z);
-                // RLXMoney::getInstance().addMoney(li->ld.ownerXuid, pay);
-                DataService::getInstance()->deleteItem<LandData>(li->ld);
+                int pay = li->getArea(); // 使用便利函数计算面积
+                // RLXMoney::getInstance().addMoney(li->getOwnerXuid(), pay);
+                // 创建一个临时的 LandData 用于删除
+                LandData tempData;
+                tempData.id = li->getId();
+                DataService::getInstance()->deleteItem<LandData>(tempData);
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
             } else if (LandCommandBasicOperation::query == operation) {
                 auto pos  = sp->getPosition();
@@ -242,10 +223,10 @@ void LandCommands::registerCommands() {
                     info += "§b[领地信息]§r 公共用地\n";
                 } else {
                     // 在某个领地内
-                    info += "§b[领地信息]§r " + li->ld.description + "\n";
-                    info += "  所有人: §6" + li->ownerName + "§r\n";
-                    info += "  所有者权限: §6" + showPerm(li->ld.perm, true) + "§r\n";
-                    info += "  其他用户权限: §6" + showPerm(li->ld.perm, false) + "§r\n";
+                    info += "§b[领地信息]§r " + li->getDescription() + "\n";
+                    info += "  所有人: §6" + li->getOwnerName() + "§r\n";
+                    info += "  所有者权限: §6" + showPerm(li->getPermission(), true) + "§r\n";
+                    info += "  其他用户权限: §6" + showPerm(li->getPermission(), false) + "§r\n";
                     if (!li->getMembers().empty()) {
                         info += "  成员列表: §6" + li->getMembers() + "§r\n";
                     }
@@ -255,8 +236,8 @@ void LandCommands::registerCommands() {
                 if (town == nullptr) {
                     info += "§b[城镇信息]§r 公共区域（未被任何城镇管辖）\n";
                 } else {
-                    info += "§b[城镇信息]§r " + town->td.name + "\n";
-                    info += "  镇长: §6" + town->mayorName + "§r\n";
+                    info += "§b[城镇信息]§r " + town->getTownName() + "\n";
+                    info += "  镇长: §6" + town->getOwnerName() + "§r\n";
                     if (!town->getMembers().empty()) {
                         info += "  成员列表: §6" + town->getMembers() + "§r\n";
                     }

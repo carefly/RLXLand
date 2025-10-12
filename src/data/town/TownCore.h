@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/LeviLaminaAPI.h"
 #include "data/core/BaseInformation.h"
 #include <basetsd.h>
 #include <string>
@@ -17,12 +18,25 @@ class TownInformation : public BaseInformation {
 public:
     explicit TownInformation(TownData td);
 
+    // 删除重复字段：不再有 TownData td 和 std::string mayorName
+    // 统一使用基类的 ownerName 存储市长名称
+
+    // Town 特有数据的访问接口（不暴露 TownData）
+    [[nodiscard]] const std::string& getTownName() const { return townData.name; }
+    [[nodiscard]] const std::string& getMayorXuid() const { return townData.mayorXuid; }
+
+    // 设置接口
+    void setTownName(const std::string& name) { townData.name = name; }
+    void setMayorXuid(const std::string& xuid);
+
+    // 重新初始化 ownerName（用于管理器）
+    void refreshOwnerName() { setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(townData.mayorXuid)); }
+
 protected:
     [[nodiscard]] bool checkIsOwner(const std::string& xuid) const override;
 
-public:
-    TownData    td;
-    std::string mayorName;
+private:
+    TownData townData; // 私有，不对外暴露
 };
 
 } // namespace rlx_land
