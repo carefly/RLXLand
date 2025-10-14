@@ -9,6 +9,7 @@
 
 #include "DataService.h"
 #include "common/JsonLoader.h"
+#include "common/exceptions/LandExceptions.h"
 #include "data/land/LandCore.h"
 #include "data/spatial/SpatialMap.h"
 #include "mod/town/permissions/TownPermissionChecker.h"
@@ -39,12 +40,8 @@ TownInformation* DataService::findTownByName(const std::string& name) {
     return nullptr;
 }
 
-void DataService::clearAllData() {
 #ifdef TESTING
-    LOG_INFO("Clearing all data for testing");
-#else
-    RLXLand::getInstance().getSelf().getLogger().info("Clearing all data");
-#endif
+void DataService::clearAllData() {
 
     // 1. 先清理空间索引结构（不删除对象）
     // 清理Land空间地图
@@ -66,13 +63,8 @@ void DataService::clearAllData() {
 
     // 清空Town数据文件
     DataLoaderTraits<TownData>::saveToFile(std::vector<TownData>());
-
-#ifdef TESTING
-    LOG_INFO("All data cleared successfully");
-#else
-    RLXLand::getInstance().getSelf().getLogger().info("All data cleared successfully");
-#endif
 }
+#endif
 
 // 统一的公共接口实现
 template <typename T>
@@ -83,6 +75,9 @@ void DataService::loadItems() {
 
 template <typename T>
 void DataService::createItem(typename DataLoaderTraits<T>::DataType data, const PlayerInfo& playerInfo) {
+    // 首先验证 PlayerInfo 的合法性
+    validatePlayerInfo(playerInfo);
+
     if constexpr (std::is_same_v<T, LandData>) {
         validateLandCreation(data, playerInfo);
     } else if constexpr (std::is_same_v<T, TownData>) {
@@ -288,22 +283,54 @@ template void DataService::updateSpatialMapRange<
 template LandInformation* DataService::findItemAt<LandData>(LONG64 x, LONG64 z, int dimension);
 template TownInformation* DataService::findItemAt<TownData>(LONG64 x, LONG64 z, int dimension);
 
+// 坐标验证方法的模板实例化
+template void DataService::validateCoordinatesRange<LandData>(const LandData& data);
+template void DataService::validateCoordinatesRange<TownData>(const TownData& data);
+
 // 验证方法实现
+void DataService::validatePlayerInfo(const PlayerInfo& playerInfo) {
+    // 验证 XUID 不为空
+    if (playerInfo.xuid.empty()) {
+        throw InvalidPlayerInfoException("玩家XUID不能为空");
+    }
+
+    // 通过 ll 的 API 使用 xuid 获取 playername 并验证不为空
+    std::string playerName = LeviLaminaAPI::getPlayerNameByXuid(playerInfo.xuid);
+    if (playerName.empty()) {
+        throw InvalidPlayerInfoException("无法通过XUID获取玩家名称");
+    }
+}
+
 void DataService::validateLandCreation(const LandData& data, const PlayerInfo& playerInfo) {
-    validateCoordinatesRange(data);
+    validateCoordinatesRange<LandData>(data);
     validateTownPermission(data, playerInfo);
     validateLandConflict(data);
 }
 
-void DataService::validateCoordinatesRange(const LandData& data) {
-    // 检查是否超出LAND_RANGE范围
+// 通用坐标范围验证模板函数实现
+template <typename T>
+void DataService::validateCoordinatesRange(const T& data) {
+    // 提取类型特定参数
+    const char* typeName = std::is_same_v<T, LandData> ? "领地" : "城镇";
+
+    // 统一的验证逻辑
+    // 1. 检查坐标基本有效性：起始坐标不能大于结束坐标
+    if (data.x > data.x_end) {
+        throw InvalidCoordinatesException(std::format("起始X坐标({})不能大于结束X坐标({})", data.x, data.x_end));
+    }
+
+    if (data.z > data.z_end) {
+        throw InvalidCoordinatesException(std::format("起始Z坐标({})不能大于结束Z坐标({})", data.z, data.z_end));
+    }
+
+    // 2. 检查是否超出LAND_RANGE范围
     if (data.x >= LAND_RANGE || data.x <= -LAND_RANGE || data.x_end >= LAND_RANGE || data.x_end <= -LAND_RANGE
         || data.z >= LAND_RANGE || data.z <= -LAND_RANGE || data.z_end >= LAND_RANGE || data.z_end <= -LAND_RANGE) {
-        throw LandOutOfRangeException(std::format("领地坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
+        throw RealmOutOfRangeException(std::format("{}坐标超出范围，坐标范围不能超过 +/-{}", typeName, LAND_RANGE));
     }
 
     if ((abs(data.x) > LAND_RANGE) || (abs(data.z) > LAND_RANGE)) {
-        throw LandOutOfRangeException(std::format("领地不能超过 {} 格", LAND_RANGE));
+        throw RealmOutOfRangeException(std::format("{}不能超过 {} 格", typeName, LAND_RANGE));
     }
 }
 
@@ -312,7 +339,7 @@ void DataService::validateTownPermission(const LandData& data, const PlayerInfo&
     for (int xi = data.x; xi <= data.x_end; xi++) {
         for (int zi = data.z; zi <= data.z_end; zi++) {
             if (!TownPermissionChecker::canClaimLand(playerInfo, xi, zi, data.d)) {
-                throw LandPermissionException("您没有在此区域圈地的权限");
+                throw RealmPermissionException("您没有在此区域圈地的权限");
             }
         }
     }
@@ -323,7 +350,7 @@ void DataService::validateLandConflict(const LandData& data) {
         for (int zi = data.z; zi <= data.z_end; zi++) {
             auto li = findLandAt(xi, zi, data.d);
             if (li != nullptr) {
-                throw LandConflictException(
+                throw RealmConflictException(
                     std::format("领地冲突 x:{} z:{} 领地所有者 {} 请重新圈地", xi, zi, li->getOwnerName())
                 );
             }
@@ -333,26 +360,15 @@ void DataService::validateLandConflict(const LandData& data) {
 
 // Town验证方法实现
 void DataService::validateTownCreation(const TownData& data, const PlayerInfo& playerInfo) {
-    validateTownCoordinatesRange(data);
+    validateCoordinatesRange<TownData>(data);
     validateOperatorPermission(playerInfo);
     validateTownOverlap(data);
 }
 
-void DataService::validateTownCoordinatesRange(const TownData& data) {
-    // 检查是否超出LAND_RANGE范围
-    if (data.x >= LAND_RANGE || data.x <= -LAND_RANGE || data.x_end >= LAND_RANGE || data.x_end <= -LAND_RANGE
-        || data.z >= LAND_RANGE || data.z <= -LAND_RANGE || data.z_end >= LAND_RANGE || data.z_end <= -LAND_RANGE) {
-        throw TownOutOfRangeException(std::format("城镇坐标超出范围，坐标范围不能超过 +/-{}", LAND_RANGE));
-    }
-
-    if ((abs(data.x) > LAND_RANGE) || (abs(data.z) > LAND_RANGE)) {
-        throw TownOutOfRangeException(std::format("城镇不能超过 {} 格", LAND_RANGE));
-    }
-}
 
 void DataService::validateOperatorPermission(const PlayerInfo& playerInfo) {
     if (!playerInfo.isOperator) {
-        throw TownPermissionException("只有腐竹可以创建城镇");
+        throw RealmPermissionException("只有腐竹可以创建城镇");
     }
 }
 
@@ -361,7 +377,7 @@ void DataService::validateTownOverlap(const TownData& data) {
         for (int zi = data.z; zi <= data.z_end; zi++) {
             auto town = findTownAt(xi, zi, data.d);
             if (town != nullptr) {
-                throw TownConflictException(
+                throw RealmConflictException(
                     std::format("城镇冲突 x:{} z:{} 城镇所有者 {} 请重新选择区域", xi, zi, town->getOwnerName())
                 );
             }

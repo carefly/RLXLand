@@ -1,15 +1,8 @@
-#ifndef TESTING
 #include "mod/RLXLand.h"
-#include <ll/api/io/Logger.h>
-#else
-// 测试环境下的简单日志实现
-#include <iostream>
-#define LOG_INFO(msg)  std::cout << "[INFO] " << msg << std::endl
-#define LOG_ERROR(msg) std::cerr << "[ERROR] " << msg << std::endl
-#endif
 
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
+#include "common/Utf8Utils.h"
 #include "data/land/LandCore.h"
 #include "data/town/TownCore.h"
 #include <fstream>
@@ -20,7 +13,8 @@ namespace rlx_land {
 
 // 路径管理方法
 std::string JsonLoader::getLandsBaseDir() { return "../RLXModeResources/data/lands"; }
-std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/towns/towns.json"; }
+std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/towns"; }
+std::string JsonLoader::getTownsJsonFile() { return "../RLXModeResources/data/towns/towns.json"; }
 
 
 std::string JsonLoader::generatePlayerFileName(const std::string& xuid, const std::string& playerName) {
@@ -45,15 +39,11 @@ void JsonLoader::ensureDirectoryExists(const std::string& dirPath) {
     try {
         std::filesystem::create_directories(dirPath);
     } catch (const std::exception& e) {
-#ifdef TESTING
-        LOG_ERROR("Failed to create directory");
-#else
         rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
             "Failed to create directory {}: {}",
             dirPath,
             e.what()
         );
-#endif
         throw;
     }
 }
@@ -71,11 +61,7 @@ std::vector<std::string> JsonLoader::scanPlayerFiles() {
             }
         }
     } catch (const std::exception& e) {
-#ifdef TESTING
-        LOG_ERROR("Failed to scan player files");
-#else
         rlx_land::RLXLand::getInstance().getSelf().getLogger().error("Failed to scan player files: {}", e.what());
-#endif
     }
 
     return playerFiles;
@@ -96,15 +82,11 @@ void JsonLoader::deleteOldPlayerFile(const std::string& xuid) {
         try {
             std::filesystem::remove(oldPath);
         } catch (const std::exception& e) {
-#ifdef TESTING
-            LOG_ERROR("Failed to delete old player file");
-#else
             rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
                 "Failed to delete old player file {}: {}",
                 file,
                 e.what()
             );
-#endif
         }
     }
 }
@@ -144,16 +126,12 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
     for (const auto& file : playerFiles) {
         std::filesystem::path fullPath = std::filesystem::path(landsDir) / file;
         try {
-            std::ifstream fileStream(fullPath);
+            std::ifstream fileStream = Utf8Utils::createUtf8InputStream(fullPath.string());
             if (!fileStream.is_open()) {
-#ifdef TESTING
-                LOG_ERROR("Can't open player lands file");
-#else
                 rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
                     "Can't open player lands file {}",
                     fullPath
                 );
-#endif
                 continue;
             }
 
@@ -179,16 +157,12 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
                 }
             }
         } catch (const std::exception& e) {
-// 记录错误但继续处理其他文件
-#ifdef TESTING
-            LOG_ERROR("Failed to load player file");
-#else
+            // 记录错误但继续处理其他文件
             rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
                 "Failed to load player file {}: {}",
                 file,
                 e.what()
             );
-#endif
         }
     }
 
@@ -197,19 +171,15 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
 
 std::vector<TownData> JsonLoader::loadTownsFromFile() {
     std::vector<TownData> towns;
-    std::string           townsPath = getTownsBaseDir();
+    std::string           townsPath = getTownsJsonFile();
 
     // 确保towns目录存在
-    std::string townsDir = townsPath.substr(0, townsPath.find_last_of('/'));
+    std::string townsDir = getTownsBaseDir();
     ensureDirectoryExists(townsDir);
 
-    std::ifstream file(townsPath);
+    std::ifstream file = Utf8Utils::createUtf8InputStream(townsPath);
     if (!file.is_open()) {
-#ifdef TESTING
-        LOG_ERROR("Can't open towns file");
-#else
         rlx_land::RLXLand::getInstance().getSelf().getLogger().error("Can't open towns file {}", townsPath);
-#endif
         return towns;
     }
 
@@ -250,11 +220,6 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
     // 2. 加载现有数据用于对比
     auto existingGroupedLands = loadExistingPlayerData();
 
-    int savedCount   = 0;
-    int skippedCount = 0;
-    int renamedCount = 0;
-    int deletedCount = 0;
-
     // 3. 处理每个玩家的数据
     for (const auto& [ownerXuid, newPlayerLands] : newGroupedLands) {
         std::string playerName = getPlayerNameByXuid(ownerXuid);
@@ -274,7 +239,6 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
             // 如果需要重命名，先删除旧文件
             if (needsRename) {
                 deleteOldPlayerFile(ownerXuid);
-                renamedCount++;
             }
 
             std::string           fileName = generatePlayerFileName(ownerXuid, playerName);
@@ -297,14 +261,11 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
                 json.push_back(item);
             }
 
-            std::ofstream file(fullPath);
+            std::ofstream file = Utf8Utils::createUtf8OutputStream(fullPath.string());
             if (file.is_open()) {
                 file << json.dump(4);
                 file.close();
             }
-            savedCount++;
-        } else {
-            skippedCount++;
         }
     }
 
@@ -312,30 +273,17 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
     for (const auto& [ownerXuid, oldPlayerLands] : existingGroupedLands) {
         if (newGroupedLands.find(ownerXuid) == newGroupedLands.end()) {
             deletePlayerFile(ownerXuid);
-            deletedCount++;
         }
     }
-
-// 5. 记录统计信息
-#ifdef TESTING
-    LOG_INFO(
-        "Lands save completed: " + std::to_string(savedCount) + " saved, " + std::to_string(skippedCount) + " skipped, "
-        + std::to_string(renamedCount) + " renamed, " + std::to_string(deletedCount) + " deleted"
-    );
-#else
-    rlx_land::RLXLand::getInstance().getSelf().getLogger().info(
-        "Lands save completed: {} saved, {} skipped, {} renamed, {} deleted",
-        savedCount,
-        skippedCount,
-        renamedCount,
-        deletedCount
-    );
-#endif
 }
 
 void JsonLoader::saveTownsToFile(const std::vector<TownData>& towns) {
     nlohmann::json json;
-    std::string    townsPath = getTownsBaseDir();
+    std::string    townsPath = getTownsJsonFile();
+    std::string    townsDir  = getTownsBaseDir();
+
+    // 确保towns目录存在
+    ensureDirectoryExists(townsDir);
 
     for (const auto& town : towns) {
         nlohmann::json item;
@@ -354,7 +302,8 @@ void JsonLoader::saveTownsToFile(const std::vector<TownData>& towns) {
         json.push_back(item);
     }
 
-    std::ofstream file(townsPath);
+    // 保存到统一文件
+    std::ofstream file = Utf8Utils::createUtf8OutputStream(townsPath);
     if (file.is_open()) {
         file << json.dump(4);
         file.close();
@@ -376,7 +325,7 @@ std::map<std::string, std::vector<LandData>> JsonLoader::loadExistingPlayerData(
             try {
                 // 直接从文件加载单个玩家的数据
                 std::vector<LandData> playerLands;
-                std::ifstream         fileStream(fullPath);
+                std::ifstream         fileStream = Utf8Utils::createUtf8InputStream(fullPath.string());
                 if (fileStream.is_open()) {
                     nlohmann::json json;
                     fileStream >> json;
@@ -401,15 +350,11 @@ std::map<std::string, std::vector<LandData>> JsonLoader::loadExistingPlayerData(
                 }
                 existingData[xuid] = playerLands;
             } catch (const std::exception& e) {
-#ifdef TESTING
-                LOG_ERROR("Failed to load existing player file");
-#else
                 rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
                     "Failed to load existing player file {}: {}",
                     file,
                     e.what()
                 );
-#endif
             }
         }
     }
@@ -484,26 +429,18 @@ void JsonLoader::renamePlayerFileIfNeeded(const std::string& xuid, const std::st
 
         try {
             std::filesystem::rename(oldPath, newPath);
-#ifdef TESTING
-            LOG_INFO("Renamed player file");
-#else
             rlx_land::RLXLand::getInstance().getSelf().getLogger().info(
                 "Renamed player file from {} to {}",
                 file,
                 generatePlayerFileName(xuid, newName)
             );
-#endif
         } catch (const std::exception& e) {
-#ifdef TESTING
-            LOG_ERROR("Failed to rename player file");
-#else
             rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
                 "Failed to rename player file from {} to {}: {}",
                 oldPath,
                 newPath,
                 e.what()
             );
-#endif
         }
     }
 }

@@ -71,26 +71,26 @@ if has_config("tests") then
         add_headerfiles("src/data/town/**.h")
         add_headerfiles("src/data/service/**.h")
         add_headerfiles("src/common/**.h")
-        add_includedirs("src")
+        -- 关键：将覆盖目录放在最前面，实现头文件覆盖
+        add_includedirs("tests/overrides", "tests", "src")
         
         -- 包含源文件（这些文件会使用 TESTING 宏）
         add_files("src/data/core/BaseDataManager.cpp")
+        add_files("src/data/core/BaseInformation.cpp")  -- 添加BaseInformation实现
         add_files("src/data/land/LandCore.cpp")
         add_files("src/data/town/TownCore.cpp")
         add_files("src/data/service/DataService.cpp")
         add_files("src/common/JsonLoader.cpp")
-        add_files("src/common/LeviLaminaAPI.cpp")  -- 这个文件会被条件编译
+        -- 注意：不添加 src/common/LeviLaminaAPI.cpp，使用覆盖版本
+        add_files("tests/overrides/mod/RLXLand.cpp")  -- 添加 RLXLand 覆盖实现
         add_files("src/mod/town/permissions/TownPermissionChecker.cpp")  -- 添加权限检查器实现
         
         -- 包含测试文件（排除与源文件重复的测试文件）
         add_files("tests/mocks/**.cpp")
-        add_files("tests/utils/TestBaseInformation.cpp")
-        add_files("tests/utils/TestDataLoader.cpp")
         add_files("tests/utils/TestEnvironment.cpp")
-        add_files("tests/utils/TestHelper.cpp")
         add_files("tests/integration/**.cpp")
         add_files("tests/main.cpp")
-        add_includedirs("tests")
+        -- 注意：tests已经在includedirs中包含，不需要重复添加
         
         -- 添加必要的编译标志
         add_cxflags("/EHa", "/utf-8", "/W4", "/w44265", "/w44289", "/w44296", "/w45263", "/w44738", "/w45204")

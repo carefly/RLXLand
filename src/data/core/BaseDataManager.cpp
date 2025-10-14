@@ -63,7 +63,7 @@ void BaseDataManager<T, U>::remove(T data) {
             delete info;
         }
     } else {
-        throw LandNotFoundException("Item not found to delete");
+        throw RealmNotFoundException("Item not found to delete");
     }
 }
 
@@ -82,7 +82,7 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
         // 保存回文件
         Traits::saveToFile(items);
     } else {
-        throw LandNotFoundException("Item not found to modify permission");
+        throw RealmNotFoundException("Item not found to modify permission");
     }
 
     // 更新内存中的权限
@@ -91,7 +91,7 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
 
 template <typename T, typename U>
 void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
-    if (info == nullptr) throw LandNotFoundException("Item not found");
+    if (info == nullptr) throw RealmNotFoundException("Item not found");
 
     std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
@@ -117,7 +117,7 @@ void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
 
 template <typename T, typename U>
 void BaseDataManager<T, U>::removeMember(U* info, const std::string& playerName) {
-    if (info == nullptr) throw LandNotFoundException("Item not found");
+    if (info == nullptr) throw RealmNotFoundException("Item not found");
 
     std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
     if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);

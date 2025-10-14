@@ -185,11 +185,11 @@ void LandCommands::registerCommands() {
                     // 使用统一的createItem方法创建土地
                     DataService::getInstance()->createItem<LandData>(data, playerInfo);
                     output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
-                } catch (const LandOutOfRangeException& e) {
+                } catch (const RealmOutOfRangeException& e) {
                     output.error(e.what());
-                } catch (const LandPermissionException& e) {
+                } catch (const RealmPermissionException& e) {
                     output.error(e.what());
-                } catch (const LandConflictException& e) {
+                } catch (const RealmConflictException& e) {
                     output.error(e.what());
                 } catch (const std::exception& e) {
                     output.error(format("创建领地时发生错误: {}", e.what()));

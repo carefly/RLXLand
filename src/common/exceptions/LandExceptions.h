@@ -7,9 +7,9 @@ public:
     explicit PlayerNotFoundException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandNotFoundException : public std::runtime_error {
+class RealmNotFoundException : public std::runtime_error {
 public:
-    explicit LandNotFoundException(const std::string& message) : std::runtime_error(message) {}
+    explicit RealmNotFoundException(const std::string& message) : std::runtime_error(message) {}
 };
 
 class DuplicateException : public std::runtime_error {
@@ -22,32 +22,27 @@ public:
     explicit NotMemberException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandOutOfRangeException : public std::runtime_error {
+class RealmOutOfRangeException : public std::runtime_error {
 public:
-    explicit LandOutOfRangeException(const std::string& message) : std::runtime_error(message) {}
+    explicit RealmOutOfRangeException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandPermissionException : public std::runtime_error {
+class RealmPermissionException : public std::runtime_error {
 public:
-    explicit LandPermissionException(const std::string& message) : std::runtime_error(message) {}
+    explicit RealmPermissionException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class LandConflictException : public std::runtime_error {
+class RealmConflictException : public std::runtime_error {
 public:
-    explicit LandConflictException(const std::string& message) : std::runtime_error(message) {}
+    explicit RealmConflictException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class TownOutOfRangeException : public std::runtime_error {
+class InvalidCoordinatesException : public std::runtime_error {
 public:
-    explicit TownOutOfRangeException(const std::string& message) : std::runtime_error(message) {}
+    explicit InvalidCoordinatesException(const std::string& message) : std::runtime_error(message) {}
 };
 
-class TownConflictException : public std::runtime_error {
+class InvalidPlayerInfoException : public std::runtime_error {
 public:
-    explicit TownConflictException(const std::string& message) : std::runtime_error(message) {}
-};
-
-class TownPermissionException : public std::runtime_error {
-public:
-    explicit TownPermissionException(const std::string& message) : std::runtime_error(message) {}
+    explicit InvalidPlayerInfoException(const std::string& message) : std::runtime_error(message) {}
 };

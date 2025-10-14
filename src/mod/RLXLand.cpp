@@ -2,6 +2,7 @@
 
 #include "ll/api/mod/RegisterHelper.h"
 
+
 namespace rlx_land {
 
 RLXLand& RLXLand::getInstance() {
@@ -11,6 +12,8 @@ RLXLand& RLXLand::getInstance() {
 
 bool RLXLand::load() {
     getSelf().getLogger().debug("Loading...");
+
+
     // Code for loading the mod goes here.
     return true;
 }

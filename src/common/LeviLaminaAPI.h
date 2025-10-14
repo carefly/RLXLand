@@ -5,8 +5,7 @@ class Player;
 
 // 测试环境宏定义
 #ifdef TESTING
-#include "../tests/mocks/MockLeviLaminaAPI.h"
-#define LeviLaminaAPI rlx_land::test::mock::MockLeviLaminaAPI
+#include "../tests/overrides/common/LeviLaminaAPI.h"
 #endif
 
 namespace rlx_land {

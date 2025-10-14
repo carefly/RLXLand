@@ -1,7 +1,9 @@
 #include "TestEnvironment.h"
-#include "mocks/MockLeviLaminaAPI.h"
+#include "common/Utf8Utils.h"
+#include "overrides/common/LeviLaminaAPI.h"
 #include <filesystem>
 #include <iostream>
+
 
 namespace rlx_land::test {
 
@@ -14,6 +16,8 @@ void TestEnvironment::initialize() {
     if (m_initialized) {
         return;
     }
+    // 设置UTF-8环境以解决中文乱码问题
+    Utf8Utils::setUtf8Environment();
 
     std::cout << "Start initialize test environment." << std::endl;
 
@@ -51,7 +55,7 @@ void TestEnvironment::cleanup() {
     }
 
     // 清理模拟数据
-    mock::MockLeviLaminaAPI::clearMockPlayers();
+    LeviLaminaAPI::clearMockPlayers();
 
     m_initialized = false;
     std::cout << "Test environment cleaned up." << std::endl;
@@ -63,11 +67,11 @@ std::string TestEnvironment::getTempDataPath() const { return m_tempDataPath; }
 
 void TestEnvironment::setupMockLeviLamina() {
     // 清理之前的模拟数据
-    mock::MockLeviLaminaAPI::clearMockPlayers();
+    LeviLaminaAPI::clearMockPlayers();
 
     // 添加一些基本的模拟用户
-    mock::MockLeviLaminaAPI::addMockPlayer("system", "System");
-    mock::MockLeviLaminaAPI::addMockPlayer("admin", "Admin");
+    LeviLaminaAPI::addMockPlayer("system", "System");
+    LeviLaminaAPI::addMockPlayer("admin", "Admin");
 }
 
 void TestEnvironment::setupMockServer() {

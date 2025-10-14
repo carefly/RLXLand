@@ -24,6 +24,7 @@ private:
     // 路径管理
     static std::string getLandsBaseDir();
     static std::string getTownsBaseDir();
+    static std::string getTownsJsonFile();
 
     static std::string generatePlayerFileName(const std::string& xuid, const std::string& playerName);
     static std::pair<std::string, std::string> parseFileName(const std::string& fileName);

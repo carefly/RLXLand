@@ -18,7 +18,7 @@ protected:
 public:
     // Town特有的方法
     void transferMayor(TownInformation* ti, const std::string& playerName) {
-        if (ti == nullptr) throw LandNotFoundException("Town not found");
+        if (ti == nullptr) throw RealmNotFoundException("Town not found");
 
         std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
         if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);

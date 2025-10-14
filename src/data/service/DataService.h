@@ -19,7 +19,10 @@ struct PlayerInfo {
     std::string name;
     bool        isOperator;
 
-    PlayerInfo(const std::string& x, const std::string& n, bool isOp = false) : xuid(x), name(n), isOperator(isOp) {}
+    PlayerInfo(std::string x, std::string n, bool isOp = false)
+    : xuid(std::move(x)),
+      name(std::move(n)),
+      isOperator(isOp) {}
 };
 
 class DataService {
@@ -62,9 +65,10 @@ public:
     void             transferTownMayor(TownInformation* ti, const std::string& playerName);
     TownInformation* findTownByName(const std::string& name);
 
+#ifdef TESTING
     // 测试专用方法 - 清理所有数据
     void clearAllData();
-
+#endif
 
 private:
     std::unique_ptr<LandDataManager> landManager;
@@ -125,14 +129,17 @@ private:
     // 验证方法（私有）
     void validateLandCreation(const LandData& data, const PlayerInfo& playerInfo);
     void validateTownCreation(const TownData& data, const PlayerInfo& playerInfo);
+    void validatePlayerInfo(const PlayerInfo& playerInfo);
+
+    // 通用验证方法
+    template <typename T>
+    void validateCoordinatesRange(const T& data);
 
     // Land验证方法
-    void validateCoordinatesRange(const LandData& data);
     void validateTownPermission(const LandData& data, const PlayerInfo& playerInfo);
     void validateLandConflict(const LandData& data);
 
     // Town验证方法
-    void validateTownCoordinatesRange(const TownData& data);
     void validateOperatorPermission(const PlayerInfo& playerInfo);
     void validateTownOverlap(const TownData& data);
 };

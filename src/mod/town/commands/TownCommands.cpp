@@ -132,11 +132,11 @@ void TownCommands::registerCommands() {
 
                     std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
                     output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
-                } catch (const TownOutOfRangeException& e) {
+                } catch (const RealmOutOfRangeException& e) {
                     output.error(e.what());
-                } catch (const TownPermissionException& e) {
+                } catch (const RealmPermissionException& e) {
                     output.error(e.what());
-                } catch (const TownConflictException& e) {
+                } catch (const RealmConflictException& e) {
                     output.error(e.what());
                 } catch (const std::exception& e) {
                     output.error(format("创建城镇时发生错误: {}", e.what()));
