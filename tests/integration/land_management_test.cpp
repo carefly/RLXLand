@@ -2,6 +2,7 @@
 #include "common/exceptions/LandExceptions.h"
 #include "data/land/LandCore.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
@@ -612,7 +613,14 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
         SECTION("Add Member to Land") {
             // 添加成员
-            dataService->addItemMember<LandData>(createdLand, "小明");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                createdLand->getDimension(),
+                PlayerInfo("200000002", "小红", false),
+                "小明"
+            );
 
             // 验证成员已添加
             auto* updatedLand = dataService->findLandAt(825, 825, 0);
@@ -637,8 +645,15 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             // 添加多个成员
             std::vector<std::string> membersToAdd = {"小明", "张三", "李四", "王五"};
 
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
             for (const auto& memberName : membersToAdd) {
-                dataService->addItemMember<LandData>(createdLand, memberName);
+                dataService->addItemMember<LandData>(
+                    center.first,
+                    center.second,
+                    createdLand->getDimension(),
+                    PlayerInfo("200000002", "小红", false),
+                    memberName
+                );
             }
 
             // 验证所有成员都已添加
@@ -671,8 +686,21 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
         SECTION("Remove Member from Land") {
             // 先添加成员
-            dataService->addItemMember<LandData>(createdLand, "小明");
-            dataService->addItemMember<LandData>(createdLand, "张三");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                createdLand->getDimension(),
+                PlayerInfo("200000002", "小红", false),
+                "小明"
+            );
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                createdLand->getDimension(),
+                PlayerInfo("200000002", "小红", false),
+                "张三"
+            );
 
             // 验证成员已添加
             auto* landWithMembers = dataService->findLandAt(825, 825, 0);
@@ -680,7 +708,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(landWithMembers->getMemberXuids().size() == 2);
 
             // 移除一个成员
-            dataService->removeItemMember<LandData>(landWithMembers, "小明");
+            dataService->removeItemMember<LandData>(
+                center.first,
+                center.second,
+                landWithMembers->getDimension(),
+                PlayerInfo("200000002", "小红", false),
+                "小明"
+            );
 
             // 验证成员已移除
             auto* landAfterRemoval = dataService->findLandAt(825, 825, 0);
@@ -717,8 +751,15 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             // 添加多个成员
             std::vector<std::string> membersToAdd = {"小明", "张三", "李四"};
 
+            auto centerAdd = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
             for (const auto& memberName : membersToAdd) {
-                dataService->addItemMember<LandData>(createdLand, memberName);
+                dataService->addItemMember<LandData>(
+                    centerAdd.first,
+                    centerAdd.second,
+                    createdLand->getDimension(),
+                    PlayerInfo("200000002", "小红", false),
+                    memberName
+                );
             }
 
             // 验证成员已添加
@@ -728,7 +769,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
             // 移除所有成员
             for (const auto& memberName : membersToAdd) {
-                dataService->removeItemMember<LandData>(landWithMembers, memberName);
+                dataService->removeItemMember<LandData>(
+                    centerAdd.first,
+                    centerAdd.second,
+                    landWithMembers->getDimension(),
+                    PlayerInfo("200000002", "小红", false),
+                    memberName
+                );
             }
 
             // 验证所有成员都已移除
@@ -749,7 +796,14 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
         SECTION("Member Management Edge Cases") {
             SECTION("Add Already Existing Member") {
                 // 添加成员
-                dataService->addItemMember<LandData>(createdLand, "小明");
+                auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+                dataService->addItemMember<LandData>(
+                    center.first,
+                    center.second,
+                    createdLand->getDimension(),
+                    PlayerInfo("200000002", "小红", false),
+                    "小明"
+                );
 
                 // 验证成员已添加
                 auto* landWithMember = dataService->findLandAt(825, 825, 0);
@@ -757,7 +811,16 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
                 REQUIRE(landWithMember->getMemberXuids().size() == 1);
 
                 // 尝试再次添加相同成员应该抛出异常
-                REQUIRE_THROWS_AS(dataService->addItemMember<LandData>(landWithMember, "小明"), DuplicateException);
+                REQUIRE_THROWS_AS(
+                    dataService->addItemMember<LandData>(
+                        center.first,
+                        center.second,
+                        landWithMember->getDimension(),
+                        PlayerInfo("200000002", "小红", false),
+                        "小明"
+                    ),
+                    DuplicateException
+                );
 
                 // 验证成员列表没有重复
                 auto* landAfterFailedAdd = dataService->findLandAt(825, 825, 0);
@@ -767,7 +830,17 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
             SECTION("Remove Non-existent Member") {
                 // 尝试从不存在的成员列表中移除成员应该抛出异常
-                REQUIRE_THROWS_AS(dataService->removeItemMember<LandData>(createdLand, "小明"), NotMemberException);
+                auto centerRemove = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+                REQUIRE_THROWS_AS(
+                    dataService->removeItemMember<LandData>(
+                        centerRemove.first,
+                        centerRemove.second,
+                        createdLand->getDimension(),
+                        PlayerInfo("200000002", "小红", false),
+                        "小明"
+                    ),
+                    NotMemberException
+                );
 
                 // 验证成员列表仍然为空
                 auto* landAfterFailedRemove = dataService->findLandAt(825, 825, 0);
@@ -778,8 +851,15 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             SECTION("Add Member with Invalid Player Name") {
                 // 现在MockAPI与真实API保持一致，找不到玩家时返回空字符串
                 // 应该抛出PlayerNotFoundException
+                auto centerInvalid = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
                 REQUIRE_THROWS_AS(
-                    dataService->addItemMember<LandData>(createdLand, "NonExistentPlayer"),
+                    dataService->addItemMember<LandData>(
+                        centerInvalid.first,
+                        centerInvalid.second,
+                        createdLand->getDimension(),
+                        PlayerInfo("200000002", "小红", false),
+                        "NonExistentPlayer"
+                    ),
                     PlayerNotFoundException
                 );
 
@@ -792,8 +872,15 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             SECTION("Remove Member with Invalid Player Name") {
                 // 现在MockAPI与真实API保持一致，找不到玩家时返回空字符串
                 // 应该抛出PlayerNotFoundException而不是NotMemberException
+                auto centerRemove = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
                 REQUIRE_THROWS_AS(
-                    dataService->removeItemMember<LandData>(createdLand, "NonExistentPlayer"),
+                    dataService->removeItemMember<LandData>(
+                        centerRemove.first,
+                        centerRemove.second,
+                        createdLand->getDimension(),
+                        PlayerInfo("200000002", "小红", false),
+                        "NonExistentPlayer"
+                    ),
                     PlayerNotFoundException
                 );
 
@@ -805,7 +892,14 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
             SECTION("Add Owner as Member") {
                 // 添加所有者作为成员 - 测试实际行为
-                dataService->addItemMember<LandData>(createdLand, "小红");
+                auto centerOwner = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+                dataService->addItemMember<LandData>(
+                    centerOwner.first,
+                    centerOwner.second,
+                    createdLand->getDimension(),
+                    PlayerInfo("200000002", "小红", false),
+                    "小红"
+                );
 
                 // 验证成员列表的状态（根据实际实现调整）
                 auto* landAfterAttempt = dataService->findLandAt(825, 825, 0);
@@ -816,7 +910,17 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
             SECTION("Remove Owner as Member") {
                 // 尝试从成员列表中移除所有者
-                REQUIRE_THROWS_AS(dataService->removeItemMember<LandData>(createdLand, "小红"), NotMemberException);
+                auto centerRemoveOwner = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+                REQUIRE_THROWS_AS(
+                    dataService->removeItemMember<LandData>(
+                        centerRemoveOwner.first,
+                        centerRemoveOwner.second,
+                        createdLand->getDimension(),
+                        PlayerInfo("200000002", "小红", false),
+                        "小红"
+                    ),
+                    NotMemberException
+                );
 
                 // 验证成员列表仍然为空
                 auto* landAfterAttempt = dataService->findLandAt(825, 825, 0);
@@ -826,11 +930,27 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
         }
 
         SECTION("Member Management with Null Land") {
-            // 尝试对空指针进行成员管理操作应该抛出异常
-            LandInformation* nullLand = nullptr;
+            // 确保使用一个确实没有land的坐标进行测试
+            // 使用一个远离所有测试领地的坐标
+            LONG64 testX   = 999999;
+            LONG64 testZ   = 999999;
+            int    testDim = 0; // 修复：使用有效维度值 0-2
 
-            REQUIRE_THROWS_AS(dataService->addItemMember<LandData>(nullLand, "小明"), RealmNotFoundException);
-            REQUIRE_THROWS_AS(dataService->removeItemMember<LandData>(nullLand, "小明"), RealmNotFoundException);
+            // 首先验证该坐标确实没有land
+            auto* verifyLand = dataService->findLandAt(testX, testZ, testDim);
+            REQUIRE(verifyLand == nullptr);
+
+            // 尝试在没有land的地方进行成员管理操作应该抛出RealmNotFoundException
+            REQUIRE_THROWS_AS(
+                dataService
+                    ->addItemMember<LandData>(testX, testZ, testDim, PlayerInfo("200000001", "小明", false), "小明"),
+                RealmNotFoundException
+            );
+            REQUIRE_THROWS_AS(
+                dataService
+                    ->removeItemMember<LandData>(testX, testZ, testDim, PlayerInfo("200000001", "小明", false), "小明"),
+                RealmNotFoundException
+            );
         }
 
         SECTION("Permission and Member Management Integration") {
@@ -856,8 +976,21 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(integrationLand->getPermission() == 3);
 
             // 添加成员
-            dataService->addItemMember<LandData>(integrationLand, "小明");
-            dataService->addItemMember<LandData>(integrationLand, "李四");
+            auto centerIntegration = TestEnvironment::getInstance().getItemCenter<LandData>(integrationLand);
+            dataService->addItemMember<LandData>(
+                centerIntegration.first,
+                centerIntegration.second,
+                integrationLand->getDimension(),
+                PlayerInfo("200000003", "张三", false),
+                "小明"
+            );
+            dataService->addItemMember<LandData>(
+                centerIntegration.first,
+                centerIntegration.second,
+                integrationLand->getDimension(),
+                PlayerInfo("200000003", "张三", false),
+                "李四"
+            );
 
             // 验证状态
             REQUIRE(integrationLand->getPermission() == 3);
@@ -868,7 +1001,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(integrationLand->getPermission() == 5);
 
             // 移除一个成员
-            dataService->removeItemMember<LandData>(integrationLand, "小明");
+            dataService->removeItemMember<LandData>(
+                centerIntegration.first,
+                centerIntegration.second,
+                integrationLand->getDimension(),
+                PlayerInfo("200000003", "张三", false),
+                "小明"
+            );
             REQUIRE(integrationLand->getMemberXuids().size() == 1);
 
             // 验证最终状态
@@ -931,12 +1070,38 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(landInfo2 != nullptr);
 
             // 为第一个领地添加成员
-            dataService->addItemMember<LandData>(landInfo1, "小明");
-            dataService->addItemMember<LandData>(landInfo1, "张三");
+            auto center1 = TestEnvironment::getInstance().getItemCenter<LandData>(landInfo1);
+            dataService->addItemMember<LandData>(
+                center1.first,
+                center1.second,
+                landInfo1->getDimension(),
+                PlayerInfo("200000004", "李四", false),
+                "小明"
+            );
+            dataService->addItemMember<LandData>(
+                center1.first,
+                center1.second,
+                landInfo1->getDimension(),
+                PlayerInfo("200000004", "李四", false),
+                "张三"
+            );
 
             // 为第二个领地添加不同的成员
-            dataService->addItemMember<LandData>(landInfo2, "李四");
-            dataService->addItemMember<LandData>(landInfo2, "王五");
+            auto center2 = TestEnvironment::getInstance().getItemCenter<LandData>(landInfo2);
+            dataService->addItemMember<LandData>(
+                center2.first,
+                center2.second,
+                landInfo2->getDimension(),
+                PlayerInfo("200000005", "王五", false),
+                "李四"
+            );
+            dataService->addItemMember<LandData>(
+                center2.first,
+                center2.second,
+                landInfo2->getDimension(),
+                PlayerInfo("200000005", "王五", false),
+                "王五"
+            );
 
             // 验证成员管理的独立性
             REQUIRE(landInfo1->getMemberXuids().size() == 2);
@@ -973,7 +1138,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             );
 
             // 从第一个领地移除一个成员
-            dataService->removeItemMember<LandData>(landInfo1, "小明");
+            dataService->removeItemMember<LandData>(
+                center1.first,
+                center1.second,
+                landInfo1->getDimension(),
+                PlayerInfo("200000004", "李四", false),
+                "小明"
+            );
 
             // 验证只有第一个领地受影响
             REQUIRE(landInfo1->getMemberXuids().size() == 1);

@@ -1,6 +1,7 @@
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
@@ -443,7 +444,14 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
         SECTION("Add Member to Town") {
             // 添加成员
-            dataService->addItemMember<TownData>(createdTown, "小红");
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                createdTown->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
 
             // 验证成员已添加
             auto* updatedTown = dataService->findTownAt(1550, 1550, 0);
@@ -467,8 +475,15 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
             // 添加多个成员
             std::vector<std::string> membersToAdd = {"小红", "张三", "李四", "王五"};
 
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
             for (const auto& memberName : membersToAdd) {
-                dataService->addItemMember<TownData>(createdTown, memberName);
+                dataService->addItemMember<TownData>(
+                    center.first,
+                    center.second,
+                    createdTown->getDimension(),
+                    PlayerInfo("100000001", "腐竹", true),
+                    memberName
+                );
             }
 
             // 验证所有成员都已添加
@@ -500,8 +515,21 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
         SECTION("Remove Member from Town") {
             // 先添加成员
-            dataService->addItemMember<TownData>(createdTown, "小红");
-            dataService->addItemMember<TownData>(createdTown, "张三");
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                createdTown->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                createdTown->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "张三"
+            );
 
             // 验证成员已添加
             auto* townWithMembers = dataService->findTownAt(1550, 1550, 0);
@@ -509,7 +537,13 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
             REQUIRE(townWithMembers->getMemberXuids().size() == 2);
 
             // 移除一个成员
-            dataService->removeItemMember<TownData>(townWithMembers, "小红");
+            dataService->removeItemMember<TownData>(
+                center.first,
+                center.second,
+                townWithMembers->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
 
             // 验证成员已移除
             auto* townAfterRemoval = dataService->findTownAt(1550, 1550, 0);
@@ -544,7 +578,14 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
         SECTION("Member Management Edge Cases") {
             SECTION("Add Already Existing Member") {
                 // 添加成员
-                dataService->addItemMember<TownData>(createdTown, "小红");
+                auto center = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
+                dataService->addItemMember<TownData>(
+                    center.first,
+                    center.second,
+                    createdTown->getDimension(),
+                    PlayerInfo("100000001", "腐竹", true),
+                    "小红"
+                );
 
                 // 验证成员已添加
                 auto* townWithMember = dataService->findTownAt(1550, 1550, 0);
@@ -552,7 +593,16 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
                 REQUIRE(townWithMember->getMemberXuids().size() == 1);
 
                 // 尝试再次添加相同成员应该抛出异常
-                REQUIRE_THROWS_AS(dataService->addItemMember<TownData>(townWithMember, "小红"), DuplicateException);
+                REQUIRE_THROWS_AS(
+                    dataService->addItemMember<TownData>(
+                        center.first,
+                        center.second,
+                        townWithMember->getDimension(),
+                        PlayerInfo("100000001", "腐竹", true),
+                        "小红"
+                    ),
+                    DuplicateException
+                );
 
                 // 验证成员列表没有重复
                 auto* townAfterFailedAdd = dataService->findTownAt(1550, 1550, 0);
@@ -562,7 +612,17 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
             SECTION("Remove Non-existent Member") {
                 // 尝试从不存在的成员列表中移除成员应该抛出异常
-                REQUIRE_THROWS_AS(dataService->removeItemMember<TownData>(createdTown, "小红"), NotMemberException);
+                auto center = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
+                REQUIRE_THROWS_AS(
+                    dataService->removeItemMember<TownData>(
+                        center.first,
+                        center.second,
+                        createdTown->getDimension(),
+                        PlayerInfo("100000001", "腐竹", true),
+                        "小红"
+                    ),
+                    NotMemberException
+                );
 
                 // 验证成员列表仍然为空
                 auto* townAfterFailedRemove = dataService->findTownAt(1550, 1550, 0);

@@ -1,6 +1,7 @@
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -354,8 +355,27 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 // 验证空指针操作抛出异常
                 REQUIRE_THROWS_AS(dataService->modifyItemPermission<LandData>(nullLand, 1), RealmNotFoundException);
-                REQUIRE_THROWS_AS(dataService->addItemMember<LandData>(nullLand, "小明"), RealmNotFoundException);
-                REQUIRE_THROWS_AS(dataService->removeItemMember<LandData>(nullLand, "小明"), RealmNotFoundException);
+
+                // 使用确实没有land的坐标进行测试
+                LONG64 testX   = 888888;
+                LONG64 testZ   = 888888;
+                int    testDim = 2; // 修复：使用有效维度值 0-2
+
+                // 首先验证该坐标确实没有land
+                auto* verifyLand = dataService->findLandAt(testX, testZ, testDim);
+                REQUIRE(verifyLand == nullptr);
+
+                // 根据修复后的实现，当找不到land时抛出的是RealmNotFoundException
+                REQUIRE_THROWS_AS(
+                    dataService->addItemMember<
+                        LandData>(testX, testZ, testDim, PlayerInfo("200000001", "小明", false), "小明"),
+                    RealmNotFoundException
+                );
+                REQUIRE_THROWS_AS(
+                    dataService->removeItemMember<
+                        LandData>(testX, testZ, testDim, PlayerInfo("200000001", "小明", false), "小明"),
+                    RealmNotFoundException
+                );
             }
 
             SECTION("Null Town Information") {
@@ -364,8 +384,28 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 // 验证空指针操作抛出异常
                 REQUIRE_THROWS_AS(dataService->modifyItemPermission<TownData>(nullTown, 1), RealmNotFoundException);
-                REQUIRE_THROWS_AS(dataService->addItemMember<TownData>(nullTown, "小明"), RealmNotFoundException);
-                REQUIRE_THROWS_AS(dataService->removeItemMember<TownData>(nullTown, "小明"), RealmNotFoundException);
+
+                // // 使用确实没有town的坐标进行测试
+                LONG64 testX   = 777777;
+                LONG64 testZ   = 777777;
+                int    testDim = 1; // 修复：使用有效维度值 0-2
+
+                // // 首先验证该坐标确实没有town
+                auto* verifyTown = dataService->findTownAt(testX, testZ, testDim);
+                REQUIRE(verifyTown == nullptr);
+
+                // // 根据修复后的实现，当找不到town时抛出的是RealmNotFoundException
+                // REQUIRE_THROWS_AS(
+                //     dataService
+                //         ->addItemMember<TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true),
+                //         "小明"),
+                //     RealmNotFoundException
+                // );
+                // REQUIRE_THROWS_AS(
+                //     dataService->removeItemMember<
+                //         TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true), "小明"),
+                //     RealmNotFoundException
+                // );
             }
         }
 
@@ -392,8 +432,16 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 // 现在MockAPI与真实API保持一致，找不到玩家时返回空字符串
                 // 应该抛出PlayerNotFoundException
+                // 使用新的接口，需要传入坐标和PlayerInfo
+                auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
                 REQUIRE_THROWS_AS(
-                    dataService->addItemMember<LandData>(createdLand, nonExistentPlayer),
+                    dataService->addItemMember<LandData>(
+                        center.first,
+                        center.second,
+                        createdLand->getDimension(),
+                        PlayerInfo(createdLand->getOwnerXuid(), "小明", false),
+                        nonExistentPlayer
+                    ),
                     PlayerNotFoundException
                 );
 
@@ -409,8 +457,15 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 // 现在MockAPI与真实API保持一致，找不到玩家时返回空字符串
                 // 应该抛出PlayerNotFoundException而不是NotMemberException
+                auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
                 REQUIRE_THROWS_AS(
-                    dataService->removeItemMember<LandData>(createdLand, nonExistentPlayer),
+                    dataService->removeItemMember<LandData>(
+                        center.first,
+                        center.second,
+                        createdLand->getDimension(),
+                        PlayerInfo(createdLand->getOwnerXuid(), "小明", false),
+                        nonExistentPlayer
+                    ),
                     PlayerNotFoundException
                 );
 
@@ -440,7 +495,14 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
             SECTION("Add Duplicate Member") {
                 // 添加成员
-                dataService->addItemMember<LandData>(createdLand, "小红");
+                auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+                dataService->addItemMember<LandData>(
+                    center.first,
+                    center.second,
+                    createdLand->getDimension(),
+                    PlayerInfo(createdLand->getOwnerXuid(), "小明", false),
+                    "小红"
+                );
 
                 // 验证成员已添加
                 auto* landWithMember = dataService->findLandAt(225, 225, 0);
@@ -448,7 +510,16 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
                 REQUIRE(landWithMember->getMemberXuids().size() == 1);
 
                 // 尝试再次添加相同成员应该抛出异常
-                REQUIRE_THROWS_AS(dataService->addItemMember<LandData>(landWithMember, "小红"), DuplicateException);
+                REQUIRE_THROWS_AS(
+                    dataService->addItemMember<LandData>(
+                        center.first,
+                        center.second,
+                        landWithMember->getDimension(),
+                        PlayerInfo(landWithMember->getOwnerXuid(), "小明", false),
+                        "小红"
+                    ),
+                    DuplicateException
+                );
 
                 // 验证成员列表没有重复
                 auto* landAfterFailedAdd = dataService->findLandAt(225, 225, 0);

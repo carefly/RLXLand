@@ -93,4 +93,19 @@ void TestEnvironment::cleanupDefaultLandsFolder() {
     }
 }
 
+template <typename T>
+std::pair<LONG64, LONG64> TestEnvironment::getItemCenter(typename DataLoaderTraits<T>::InfoType* item) {
+    if (item == nullptr) {
+        return {0, 0};
+    }
+    // 返回中心坐标
+    LONG64 centerX = (item->getX() + item->getXEnd()) / 2;
+    LONG64 centerZ = (item->getZ() + item->getZEnd()) / 2;
+    return {centerX, centerZ};
+}
+
+// 显式实例化
+template std::pair<LONG64, LONG64> TestEnvironment::getItemCenter<LandData>(LandInformation* item);
+template std::pair<LONG64, LONG64> TestEnvironment::getItemCenter<TownData>(TownInformation* item);
+
 } // namespace rlx_land::test

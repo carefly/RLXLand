@@ -1,5 +1,6 @@
 #include "common/LeviLaminaAPI.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -250,7 +251,14 @@ TEST_CASE("Spatial Query and Boundary Check Tests", "[spatial][query][boundary]"
 
         // 添加城镇成员
         auto* createdTown = dataService->findTownAt(250, 250, 0);
-        dataService->addItemMember<TownData>(createdTown, "小红");
+        auto  center      = TestEnvironment::getInstance().getItemCenter<TownData>(createdTown);
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            createdTown->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
 
         // 在城镇内创建领地
         LandData landInTown;

@@ -42,10 +42,11 @@ public:
     void modifyItemPermission(typename DataLoaderTraits<T>::InfoType* info, int perm);
 
     template <typename T>
-    void addItemMember(typename DataLoaderTraits<T>::InfoType* info, const std::string& playerName);
+    void addItemMember(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
 
     template <typename T>
-    void removeItemMember(typename DataLoaderTraits<T>::InfoType* info, const std::string& playerName);
+    void
+    removeItemMember(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
 
     template <typename T>
     static LONG64 getMaxId();

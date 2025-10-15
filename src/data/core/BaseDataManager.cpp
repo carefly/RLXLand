@@ -63,12 +63,16 @@ void BaseDataManager<T, U>::remove(T data) {
             delete info;
         }
     } else {
-        throw RealmNotFoundException("Item not found to delete");
+        throw RealmNotFoundException("此处没有领地");
     }
 }
 
 template <typename T, typename U>
 void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
+    if (info == nullptr) {
+        throw RealmNotFoundException("领地信息为空");
+    }
+
     // 在JSON中修改权限
     // 先从文件加载现有数据
     std::vector<T> items = Traits::loadFromFile();
@@ -81,12 +85,12 @@ void BaseDataManager<T, U>::modifyPerm(U* info, int perm) {
 
         // 保存回文件
         Traits::saveToFile(items);
-    } else {
-        throw RealmNotFoundException("Item not found to modify permission");
-    }
 
-    // 更新内存中的权限
-    info->setPermission(perm);
+        // 只有在文件更新成功后才更新内存中的权限
+        info->setPermission(perm);
+    } else {
+        throw RealmNotFoundException("此处没有领地");
+    }
 }
 
 template <typename T, typename U>

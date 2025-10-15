@@ -261,58 +261,60 @@ void LandCommands::registerCommands() {
             auto  playerName = param.Name.mText;
 
             if (LandCommandTrustOperation::trust == operation) {
-
-                auto pos = sp->getPosition();
-                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
-
-                if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
-                    output.error("你不是领地主人");
-                    return;
-                }
-
-
-                auto memberXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-                if ("" == memberXuid) {
-                    output.error(format("找不到玩家 {}， 请检查玩家ID拼写", playerName));
-                    return;
-                }
-
-                auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
-
                 try {
-                    DataService::getInstance()->addItemMember<LandData>(li, memberName);
-                } catch (PlayerNotFoundException&) {
-                    output.error("玩家 {} 不存在", memberName);
-                } catch (DuplicateException&) {
-                    output.error("玩家 {} 已经是领地成员", memberName);
-                }
+                    auto       pos = sp->getPosition();
+                    PlayerInfo currentPlayer(
+                        sp->getXuid(),
+                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
+                        PermissionService::getInstance().isOperator(sp)
+                    );
 
-                output.success(format("成功添加玩家 {} 为领地成员", playerName));
+                    // 使用新的带验证的addItemMember接口
+                    DataService::getInstance()->addItemMember<LandData>(
+                        (int)pos.x,
+                        (int)pos.z,
+                        sp->getDimensionId(),
+                        currentPlayer,
+                        playerName
+                    );
+
+                    output.success(format("成功添加玩家 {} 为领地成员", playerName));
+
+                } catch (const RealmPermissionException& e) {
+                    output.error(e.what());
+                } catch (const PlayerNotFoundException& e) {
+                    output.error(e.what());
+                } catch (const DuplicateException&) {
+                    output.error("玩家 {} 已经是领地成员", playerName);
+                }
 
             } else if (LandCommandTrustOperation::untrust == operation) {
-                auto pos = sp->getPosition();
-                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
-
-                if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
-                    output.error("你不是领地主人");
-                    return;
-                }
-
-                auto memberXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-                if ("" == memberXuid) {
-                    output.error(format("找不到玩家 {}， 请检查玩家ID拼写", playerName));
-                    return;
-                }
-
                 try {
-                    DataService::getInstance()->removeItemMember<LandData>(li, playerName);
-                } catch (PlayerNotFoundException&) {
-                    output.error("玩家 {} 不存在", playerName);
-                } catch (NotMemberException&) {
+                    auto       pos = sp->getPosition();
+                    PlayerInfo currentPlayer(
+                        sp->getXuid(),
+                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
+                        PermissionService::getInstance().isOperator(sp)
+                    );
+
+                    // 使用新的带验证的removeItemMember接口
+                    DataService::getInstance()->removeItemMember<LandData>(
+                        (int)pos.x,
+                        (int)pos.z,
+                        sp->getDimensionId(),
+                        currentPlayer,
+                        playerName
+                    );
+
+                    output.success(format("成功删除领地成员 {}", playerName));
+
+                } catch (const RealmPermissionException& e) {
+                    output.error(e.what());
+                } catch (const PlayerNotFoundException& e) {
+                    output.error(e.what());
+                } catch (const NotMemberException&) {
                     output.error(format("玩家 {} 不是领地成员", playerName));
                 }
-
-                output.success(format("成功删除领地成员 {}", playerName));
             }
         });
 
@@ -331,21 +333,32 @@ void LandCommands::registerCommands() {
             auto  perm_num  = param.Perm;
 
             if (LandCommandPermOperation::perm == operation) {
-                auto pos = sp->getPosition();
-                auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
+                try {
+                    auto       pos = sp->getPosition();
+                    PlayerInfo currentPlayer(
+                        sp->getXuid(),
+                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
+                        PermissionService::getInstance().isOperator(sp)
+                    );
 
-                if (li == NULL || (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp))) {
-                    output.error("你不是领地主人");
-                    return;
+                    // 验证领地所有权
+                    auto li =
+                        DataService::getInstance()->findItemAt<LandData>((int)pos.x, (int)pos.z, sp->getDimensionId());
+                    if (li == nullptr || (!li->isOwner(currentPlayer.xuid) && !currentPlayer.isOperator)) {
+                        throw RealmPermissionException("你不是领地主人");
+                    }
+
+                    if (perm_num < 0) {
+                        output.error("perm 不能小于0");
+                        return;
+                    }
+
+                    DataService::getInstance()->modifyItemPermission<LandData>(li, perm_num);
+                    output.success(format("领地权限更改为 {}", perm_num));
+
+                } catch (const RealmPermissionException& e) {
+                    output.error(e.what());
                 }
-
-                if (perm_num < 0) {
-                    output.error("perm 不能小于0");
-                    return;
-                }
-
-                DataService::getInstance()->modifyItemPermission<LandData>(li, perm_num);
-                output.success(format("领地权限更改为 {}", perm_num));
             }
         });
 }

@@ -1,5 +1,9 @@
 #pragma once
+#include "data/core/DataLoaderTraits.h"
+#include <basetsd.h>
 #include <string>
+#include <utility>
+
 
 
 namespace rlx_land::test {
@@ -21,6 +25,10 @@ public:
 
     // 清理方法
     void cleanupDefaultLandsFolder();
+
+    // 测试辅助方法 - 获取Land或Town的中心坐标
+    template <typename T>
+    std::pair<LONG64, LONG64> getItemCenter(typename DataLoaderTraits<T>::InfoType* item);
 
 private:
     TestEnvironment() = default;

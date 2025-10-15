@@ -169,6 +169,9 @@ BigMap<InfoType>::~BigMap() {
 
 template <typename InfoType>
 InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
+    // 添加维度边界检查
+    if (d < 0 || d >= 3) return nullptr;
+
     int bigx = (int)((coordx + 100000 * 10) / 100000);
     int bigz = (int)((coordz + 100000 * 10) / 100000);
 
@@ -203,6 +206,9 @@ InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
 
 template <typename InfoType>
 void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
+    // 添加维度边界检查
+    if (d < 0 || d >= 3) return;
+
     int bigx = (int)((xi + 100000 * 10) / 100000);
     int bigz = (int)((zi + 100000 * 10) / 100000);
 

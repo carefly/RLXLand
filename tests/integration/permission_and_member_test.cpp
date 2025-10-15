@@ -1,6 +1,7 @@
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
@@ -61,7 +62,14 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             REQUIRE_FALSE(land->hasBasicPermission("200000002")); // 非成员无基础权限
 
             // 添加成员
-            dataService->addItemMember<LandData>(land, "小红");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
 
             // 验证成员有基础权限
             auto* updatedLand = dataService->findLandAt(150, 150, 0);
@@ -102,8 +110,21 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
 
         SECTION("Permission with Members") {
             // 添加成员
-            dataService->addItemMember<LandData>(land, "小红");
-            dataService->addItemMember<LandData>(land, "张三");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "张三"
+            );
 
             auto* landWithMembers = dataService->findLandAt(150, 150, 0);
             REQUIRE(landWithMembers != nullptr);
@@ -160,7 +181,14 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             REQUIRE_FALSE(town->hasBasicPermission("200000002")); // 非成员无基础权限
 
             // 添加成员
-            dataService->addItemMember<TownData>(town, "小红");
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                town->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
 
             // 验证成员有基础权限
             auto* updatedTown = dataService->findTownAt(350, 350, 0);
@@ -169,8 +197,21 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
 
         SECTION("Town Permission with Land Creation") {
             // 添加城镇成员
-            dataService->addItemMember<TownData>(town, "小红");
-            dataService->addItemMember<TownData>(town, "张三");
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                town->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
+            dataService->addItemMember<TownData>(
+                center.first,
+                center.second,
+                town->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "张三"
+            );
 
             // 设置城镇权限
             dataService->modifyItemPermission<TownData>(town, 8); // BUILD权限
@@ -219,8 +260,15 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             // 批量添加成员
             std::vector<std::string> membersToAdd = {"小红", "张三", "李四", "王五", "赵六"};
 
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
             for (const auto& memberName : membersToAdd) {
-                dataService->addItemMember<LandData>(land, memberName);
+                dataService->addItemMember<LandData>(
+                    center.first,
+                    center.second,
+                    land->getDimension(),
+                    PlayerInfo("200000001", "小明", false),
+                    memberName
+                );
             }
 
             auto* landWithMembers = dataService->findLandAt(550, 550, 0);
@@ -243,8 +291,15 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             // 批量移除成员
             std::vector<std::string> membersToRemove = {"张三", "王五", "赵六"};
 
+            auto centerRemove = TestEnvironment::getInstance().getItemCenter<LandData>(landWithMembers);
             for (const auto& memberName : membersToRemove) {
-                dataService->removeItemMember<LandData>(landWithMembers, memberName);
+                dataService->removeItemMember<LandData>(
+                    centerRemove.first,
+                    centerRemove.second,
+                    landWithMembers->getDimension(),
+                    PlayerInfo("200000001", "小明", false),
+                    memberName
+                );
             }
 
             auto* landAfterRemoval = dataService->findLandAt(550, 550, 0);
@@ -282,8 +337,21 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
 
         SECTION("Member Management with Owner Changes") {
             // 添加成员
-            dataService->addItemMember<LandData>(land, "小红");
-            dataService->addItemMember<LandData>(land, "张三");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "张三"
+            );
 
             auto* landWithMembers = dataService->findLandAt(550, 550, 0);
             REQUIRE(landWithMembers != nullptr);
@@ -296,7 +364,14 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
 
             // 注意：实际的所有者转让功能可能需要通过其他方式实现
             // 这里我们测试成员管理的独立性
-            dataService->removeItemMember<LandData>(landWithMembers, "小红");
+            auto centerRemove = TestEnvironment::getInstance().getItemCenter<LandData>(landWithMembers);
+            dataService->removeItemMember<LandData>(
+                centerRemove.first,
+                centerRemove.second,
+                landWithMembers->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
 
             auto* landAfterRemoval = dataService->findLandAt(550, 550, 0);
             REQUIRE(landAfterRemoval != nullptr);
@@ -310,7 +385,14 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             SECTION("Add Owner as Member") {
                 // 尝试将所有者添加为成员
                 // 根据实际实现，这可能被允许或拒绝
-                dataService->addItemMember<LandData>(land, "小明");
+                auto centerAdd = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+                dataService->addItemMember<LandData>(
+                    centerAdd.first,
+                    centerAdd.second,
+                    land->getDimension(),
+                    PlayerInfo("200000001", "小明", false),
+                    "小明"
+                );
 
                 auto* landAfterAttempt = dataService->findLandAt(550, 550, 0);
                 REQUIRE(landAfterAttempt != nullptr);
@@ -335,12 +417,27 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
 
             SECTION("Remove Owner as Member") {
                 // 如果所有者被添加为成员，尝试移除
-                dataService->addItemMember<LandData>(land, "小明");
+                auto centerAddOwner = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+                dataService->addItemMember<LandData>(
+                    centerAddOwner.first,
+                    centerAddOwner.second,
+                    land->getDimension(),
+                    PlayerInfo("200000001", "小明", false),
+                    "小明"
+                );
 
                 auto* landWithOwnerAsMember = dataService->findLandAt(550, 550, 0);
                 if (landWithOwnerAsMember->getMemberXuids().size() > 0) {
                     // 尝试移除所有者
-                    dataService->removeItemMember<LandData>(landWithOwnerAsMember, "小明");
+                    auto centerRemoveOwner =
+                        TestEnvironment::getInstance().getItemCenter<LandData>(landWithOwnerAsMember);
+                    dataService->removeItemMember<LandData>(
+                        centerRemoveOwner.first,
+                        centerRemoveOwner.second,
+                        landWithOwnerAsMember->getDimension(),
+                        PlayerInfo("200000001", "小明", false),
+                        "小明"
+                    );
 
                     auto* landAfterRemoval = dataService->findLandAt(550, 550, 0);
                     REQUIRE(landAfterRemoval != nullptr);
@@ -358,8 +455,15 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
                 }
 
                 // 添加所有成员
+                auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
                 for (const auto& memberName : manyMembers) {
-                    dataService->addItemMember<LandData>(land, memberName);
+                    dataService->addItemMember<LandData>(
+                        center.first,
+                        center.second,
+                        land->getDimension(),
+                        PlayerInfo("200000001", "小明", false),
+                        memberName
+                    );
                 }
 
                 auto* landWithManyMembers = dataService->findLandAt(550, 550, 0);
@@ -382,7 +486,15 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
                 // 移除一半成员
                 for (int i = 0; i < 25; i++) {
                     std::string memberName = "成员" + std::to_string(i);
-                    dataService->removeItemMember<LandData>(landWithManyMembers, memberName);
+                    auto        centerRemoveMember =
+                        TestEnvironment::getInstance().getItemCenter<LandData>(landWithManyMembers);
+                    dataService->removeItemMember<LandData>(
+                        centerRemoveMember.first,
+                        centerRemoveMember.second,
+                        landWithManyMembers->getDimension(),
+                        PlayerInfo("200000001", "小明", false),
+                        memberName
+                    );
                 }
 
                 auto* landAfterPartialRemoval = dataService->findLandAt(550, 550, 0);
@@ -413,8 +525,21 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
         REQUIRE(town != nullptr);
 
         // 添加城镇成员
-        dataService->addItemMember<TownData>(town, "小红");
-        dataService->addItemMember<TownData>(town, "张三");
+        auto center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            town->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            town->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "张三"
+        );
 
         SECTION("Land in Town with Different Permissions") {
             // 在城镇内创建领地
@@ -474,7 +599,14 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             REQUIRE(land != nullptr);
 
             // 添加Land成员
-            dataService->addItemMember<LandData>(land, "李四");
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+            dataService->addItemMember<LandData>(
+                center.first,
+                center.second,
+                land->getDimension(),
+                PlayerInfo("200000002", "小红", false),
+                "李四"
+            );
 
             // 测试不同用户类型的权限
             SECTION("Land Owner") {
@@ -578,21 +710,41 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             REQUIRE(createdLand2 != nullptr);
 
             // 在第一个领地添加成员
-            dataService->addItemMember<LandData>(createdLand1, "小红");
+            auto center1 = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand1);
+            dataService->addItemMember<LandData>(
+                center1.first,
+                center1.second,
+                createdLand1->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
 
             // 验证成员只在一个领地中有权限
             REQUIRE(createdLand1->hasBasicPermission("200000002"));
             REQUIRE_FALSE(createdLand2->hasBasicPermission("200000002"));
 
             // 在第二个领地也添加相同成员
-            dataService->addItemMember<LandData>(createdLand2, "小红");
+            auto center2 = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand2);
+            dataService->addItemMember<LandData>(
+                center2.first,
+                center2.second,
+                createdLand2->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
 
             // 现在成员在两个领地中都有权限
             REQUIRE(createdLand1->hasBasicPermission("200000002"));
             REQUIRE(createdLand2->hasBasicPermission("200000002"));
 
             // 从第一个领地移除成员
-            dataService->removeItemMember<LandData>(createdLand1, "小红");
+            dataService->removeItemMember<LandData>(
+                center1.first,
+                center1.second,
+                createdLand1->getDimension(),
+                PlayerInfo("200000001", "小明", false),
+                "小红"
+            );
 
             // 验证成员只在第二个领地中还有权限
             REQUIRE_FALSE(createdLand1->hasBasicPermission("200000002"));

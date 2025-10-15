@@ -1,6 +1,7 @@
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
+#include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
@@ -45,8 +46,21 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
         // 添加城镇成员
         auto* town = dataService->findTownAt(200, 200, 0);
         REQUIRE(town != nullptr);
-        dataService->addItemMember<TownData>(town, "小红");
-        dataService->addItemMember<TownData>(town, "张三");
+        auto center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            town->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            town->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "张三"
+        );
 
         SECTION("Town Member Can Create Land within Town") {
             // 城镇成员在城镇内创建领地
@@ -319,7 +333,15 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
         landInTown.id        = dataService->getMaxId<LandData>() + 1;
 
         PlayerInfo memberInfo("200000002", "小红", false);
-        dataService->addItemMember<TownData>(dataService->findTownAt(175, 175, 0), "小红");
+        auto*      town   = dataService->findTownAt(175, 175, 0);
+        auto       center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+        dataService->addItemMember<TownData>(
+            center.first,
+            center.second,
+            town->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
         dataService->createItem<LandData>(landInTown, memberInfo);
 
         // 在城镇外创建领地
@@ -404,7 +426,15 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
         landInTown.id        = dataService->getMaxId<LandData>() + 1;
 
         PlayerInfo memberInfo("200000002", "小红", false);
-        dataService->addItemMember<TownData>(dataService->findTownAt(175, 175, 0), "小红");
+        auto*      town2   = dataService->findTownAt(175, 175, 0);
+        auto       center2 = TestEnvironment::getInstance().getItemCenter<TownData>(town2);
+        dataService->addItemMember<TownData>(
+            center2.first,
+            center2.second,
+            town2->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
         dataService->createItem<LandData>(landInTown, memberInfo);
 
         SECTION("Delete Town Does Not Affect Land") {
@@ -479,7 +509,15 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
         landDim0.id        = dataService->getMaxId<LandData>() + 1;
 
         PlayerInfo memberInfo("200000002", "小红", false);
-        dataService->addItemMember<TownData>(dataService->findTownAt(150, 150, 0), "小红");
+        auto*      town3   = dataService->findTownAt(150, 150, 0);
+        auto       center3 = TestEnvironment::getInstance().getItemCenter<TownData>(town3);
+        dataService->addItemMember<TownData>(
+            center3.first,
+            center3.second,
+            town3->getDimension(),
+            PlayerInfo("100000001", "腐竹", true),
+            "小红"
+        );
         dataService->createItem<LandData>(landDim0, memberInfo);
 
         SECTION("Different Dimensions Are Independent") {
@@ -509,7 +547,15 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
             landDim1.id        = dataService->getMaxId<LandData>() + 1;
 
             PlayerInfo playerInfo3("200000003", "张三", false);
-            dataService->addItemMember<TownData>(dataService->findTownAt(150, 150, 1), "张三");
+            auto*      town4   = dataService->findTownAt(150, 150, 1);
+            auto       center4 = TestEnvironment::getInstance().getItemCenter<TownData>(town4);
+            dataService->addItemMember<TownData>(
+                center4.first,
+                center4.second,
+                town4->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "张三"
+            );
             dataService->createItem<LandData>(landDim1, playerInfo3);
 
             // 验证维度1的领地创建成功
@@ -556,12 +602,26 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
             dataService->createItem<TownData>(town2, operatorInfo);
 
             // 为城镇A添加成员
-            auto* townA = dataService->findTownAt(150, 150, 0);
-            dataService->addItemMember<TownData>(townA, "小红");
+            auto* townA   = dataService->findTownAt(150, 150, 0);
+            auto  centerA = TestEnvironment::getInstance().getItemCenter<TownData>(townA);
+            dataService->addItemMember<TownData>(
+                centerA.first,
+                centerA.second,
+                townA->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            );
 
             // 为城镇B添加成员
-            auto* townB = dataService->findTownAt(350, 350, 0);
-            dataService->addItemMember<TownData>(townB, "张三");
+            auto* townB   = dataService->findTownAt(350, 350, 0);
+            auto  centerB = TestEnvironment::getInstance().getItemCenter<TownData>(townB);
+            dataService->addItemMember<TownData>(
+                centerB.first,
+                centerB.second,
+                townB->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "张三"
+            );
 
             // 城镇A的成员在城镇A内创建领地
             LandData landInTownA;
@@ -595,7 +655,13 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
             );
 
             // 验证城镇A的成员可以在城镇B内创建领地（如果B成员）
-            dataService->addItemMember<TownData>(townB, "小红"); // 将小红也加入城镇B
+            dataService->addItemMember<TownData>(
+                centerB.first,
+                centerB.second,
+                townB->getDimension(),
+                PlayerInfo("100000001", "腐竹", true),
+                "小红"
+            ); // 将小红也加入城镇B
 
             LandData landInTownBByMemberA;
             landInTownBByMemberA.ownerXuid = "200000002";

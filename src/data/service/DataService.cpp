@@ -97,13 +97,61 @@ void DataService::modifyItemPermission(typename DataLoaderTraits<T>::InfoType* i
 }
 
 template <typename T>
-void DataService::addItemMember(typename DataLoaderTraits<T>::InfoType* info, const std::string& playerName) {
-    addItemMemberInternal<T>(info, playerName, getManager<T>());
+void DataService::addItemMember(
+    LONG64             x,
+    LONG64             z,
+    int                dimension,
+    const PlayerInfo&  playerInfo,
+    const std::string& playerName
+) {
+    // 1. 验证领地是否存在
+    auto li = findItemAt<T>(x, z, dimension);
+    if (li == nullptr) {
+        throw RealmNotFoundException("找不到指定的领地");
+    }
+
+    // 2. 验证领地所有权
+    if (!li->isOwner(playerInfo.xuid) && !playerInfo.isOperator) {
+        throw RealmPermissionException("你不是领地主人");
+    }
+
+    // 2. 验证目标玩家存在
+    auto memberXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    if (memberXuid.empty()) {
+        throw PlayerNotFoundException(std::format("找不到玩家 {}，请检查玩家ID拼写", playerName));
+    }
+
+    // 3. 调用原有的addItemMember方法执行实际操作
+    addItemMemberInternal<T>(li, playerName, getManager<T>());
 }
 
 template <typename T>
-void DataService::removeItemMember(typename DataLoaderTraits<T>::InfoType* info, const std::string& playerName) {
-    removeItemMemberInternal<T>(info, playerName, getManager<T>());
+void DataService::removeItemMember(
+    LONG64             x,
+    LONG64             z,
+    int                dimension,
+    const PlayerInfo&  playerInfo,
+    const std::string& playerName
+) {
+    // 1. 验证领地是否存在
+    auto li = findItemAt<T>(x, z, dimension);
+    if (li == nullptr) {
+        throw RealmNotFoundException("找不到指定的领地");
+    }
+
+    // 2. 验证领地所有权
+    if (!li->isOwner(playerInfo.xuid) && !playerInfo.isOperator) {
+        throw RealmPermissionException("你不是领地主人");
+    }
+
+    // 2. 验证目标玩家存在
+    auto memberXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+    if (memberXuid.empty()) {
+        throw PlayerNotFoundException(std::format("找不到玩家 {}，请检查玩家ID拼写", playerName));
+    }
+
+    // 3. 调用原有的removeItemMember方法执行实际操作
+    removeItemMemberInternal<T>(li, playerName, getManager<T>());
 }
 
 template <typename T>
@@ -216,6 +264,9 @@ void DataService::modifyItemPermissionInternal(
     int                                        perm,
     typename DataLoaderTraits<T>::ManagerType* manager
 ) {
+    if (info == nullptr) {
+        throw RealmNotFoundException("领地信息为空");
+    }
     manager->modifyPerm(info, perm);
 }
 
@@ -253,22 +304,26 @@ void DataService::updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2
 }
 
 // 显式模板实例化
-template void   DataService::loadItems<LandData>();
-template void   DataService::createItem<LandData>(LandData data, const PlayerInfo& playerInfo);
-template void   DataService::deleteItem<LandData>(LandData data);
-template void   DataService::modifyItemPermission<LandData>(LandInformation* info, int perm);
-template void   DataService::addItemMember<LandData>(LandInformation* info, const std::string& playerName);
-template void   DataService::removeItemMember<LandData>(LandInformation* info, const std::string& playerName);
-template LONG64 DataService::getMaxId<LandData>();
+template void DataService::loadItems<LandData>();
+template void DataService::createItem<LandData>(LandData data, const PlayerInfo& playerInfo);
+template void DataService::deleteItem<LandData>(LandData data);
+template void DataService::modifyItemPermission<LandData>(LandInformation* info, int perm);
+template void DataService::addItemMember<
+    LandData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template void DataService::removeItemMember<
+    LandData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template LONG64                        DataService::getMaxId<LandData>();
 template std::vector<LandInformation*> DataService::getAllItems<LandData>();
 
-template void   DataService::loadItems<TownData>();
-template void   DataService::createItem<TownData>(TownData data, const PlayerInfo& playerInfo);
-template void   DataService::deleteItem<TownData>(TownData data);
-template void   DataService::modifyItemPermission<TownData>(TownInformation* info, int perm);
-template void   DataService::addItemMember<TownData>(TownInformation* info, const std::string& playerName);
-template void   DataService::removeItemMember<TownData>(TownInformation* info, const std::string& playerName);
-template LONG64 DataService::getMaxId<TownData>();
+template void DataService::loadItems<TownData>();
+template void DataService::createItem<TownData>(TownData data, const PlayerInfo& playerInfo);
+template void DataService::deleteItem<TownData>(TownData data);
+template void DataService::modifyItemPermission<TownData>(TownInformation* info, int perm);
+template void DataService::addItemMember<
+    TownData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template void DataService::removeItemMember<
+    TownData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template LONG64                        DataService::getMaxId<TownData>();
 template std::vector<TownInformation*> DataService::getAllItems<TownData>();
 
 // 地图更新函数的模板实例化
