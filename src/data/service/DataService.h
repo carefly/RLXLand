@@ -36,10 +36,10 @@ public:
     void createItem(typename DataLoaderTraits<T>::DataType data, const PlayerInfo& playerInfo);
 
     template <typename T>
-    void deleteItem(typename DataLoaderTraits<T>::DataType data);
+    void deleteItem(LONG64 x, LONG64 z, int dimension);
 
     template <typename T>
-    void modifyItemPermission(typename DataLoaderTraits<T>::InfoType* info, int perm);
+    void modifyItemPermission(LONG64 x, LONG64 z, int dimension, int perm, const PlayerInfo& playerInfo);
 
     template <typename T>
     void addItemMember(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
@@ -63,7 +63,7 @@ public:
     TownInformation* findTownAt(LONG64 x, LONG64 z, int dimension);
 
     // Town 特有的方法（无法统一的方法）
-    void             transferTownMayor(TownInformation* ti, const std::string& playerName);
+    void             transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName);
     TownInformation* findTownByName(const std::string& name);
 
 #ifdef TESTING
@@ -96,13 +96,15 @@ private:
     createItemInternal(typename DataLoaderTraits<T>::DataType data, typename DataLoaderTraits<T>::ManagerType* manager);
 
     template <typename T>
-    void
-    deleteItemInternal(typename DataLoaderTraits<T>::DataType data, typename DataLoaderTraits<T>::ManagerType* manager);
+    void deleteItemInternal(LONG64 x, LONG64 z, int dimension, typename DataLoaderTraits<T>::ManagerType* manager);
 
     template <typename T>
     void modifyItemPermissionInternal(
-        typename DataLoaderTraits<T>::InfoType*    info,
+        LONG64                                     x,
+        LONG64                                     z,
+        int                                        dimension,
         int                                        perm,
+        const PlayerInfo&                          playerInfo,
         typename DataLoaderTraits<T>::ManagerType* manager
     );
 
@@ -143,6 +145,7 @@ private:
     // Town验证方法
     void validateOperatorPermission(const PlayerInfo& playerInfo);
     void validateTownOverlap(const TownData& data);
+    void validatePermission(int perm);
 };
 
 } // namespace rlx_land

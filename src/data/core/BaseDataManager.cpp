@@ -39,12 +39,12 @@ void BaseDataManager<T, U>::create(T data) {
 }
 
 template <typename T, typename U>
-void BaseDataManager<T, U>::remove(T data) {
+void BaseDataManager<T, U>::remove(LONG64 id) {
     // 从文件加载现有数据
     std::vector<T> items = Traits::loadFromFile();
 
     // 查找并删除指定项
-    auto it = std::find_if(items.begin(), items.end(), [&data](const T& item) { return item.id == data.id; });
+    auto it = std::find_if(items.begin(), items.end(), [&id](const T& item) { return item.id == id; });
 
     if (it != items.end()) {
         items.erase(it);
@@ -53,8 +53,8 @@ void BaseDataManager<T, U>::remove(T data) {
         Traits::saveToFile(items);
 
         // 从内存中删除
-        auto memIt = std::find_if(informationList.begin(), informationList.end(), [&data](U* info) {
-            return info->getId() == data.id;
+        auto memIt = std::find_if(informationList.begin(), informationList.end(), [&id](U* info) {
+            return info->getId() == id;
         });
 
         if (memIt != informationList.end()) {

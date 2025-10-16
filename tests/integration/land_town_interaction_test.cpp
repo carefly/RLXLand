@@ -3,8 +3,6 @@
 #include "data/service/DataService.h"
 #include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
-#include <filesystem>
-#include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -124,8 +122,8 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
             landData.d         = 0;
             landData.id        = dataService->getMaxId<LandData>() + 1;
 
-            PlayerInfo operatorInfo("100000001", "腐竹", true);
-            dataService->createItem<LandData>(landData, operatorInfo);
+            PlayerInfo operatorInfo1("100000001", "腐竹", true);
+            dataService->createItem<LandData>(landData, operatorInfo1);
 
             // 验证领地创建成功
             auto* land = dataService->findLandAt(130, 130, 0);
@@ -333,12 +331,12 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
         landInTown.id        = dataService->getMaxId<LandData>() + 1;
 
         PlayerInfo memberInfo("200000002", "小红", false);
-        auto*      town   = dataService->findTownAt(175, 175, 0);
-        auto       center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+        auto*      townx  = dataService->findTownAt(175, 175, 0);
+        auto       center = TestEnvironment::getInstance().getItemCenter<TownData>(townx);
         dataService->addItemMember<TownData>(
             center.first,
             center.second,
-            town->getDimension(),
+            townx->getDimension(),
             PlayerInfo("100000001", "腐竹", true),
             "小红"
         );
@@ -439,7 +437,7 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
 
         SECTION("Delete Town Does Not Affect Land") {
             // 删除城镇
-            dataService->deleteItem<TownData>(townData);
+            dataService->deleteItem<TownData>(townData.x, townData.z, townData.d);
 
             // 验证城镇被删除
             auto* deletedTown = dataService->findTownAt(175, 175, 0);
@@ -453,7 +451,7 @@ TEST_CASE("Land and Town Interaction Tests", "[land][town][interaction]") {
 
         SECTION("Delete Land Does Not Affect Town") {
             // 删除领地
-            dataService->deleteItem<LandData>(landInTown);
+            dataService->deleteItem<LandData>(landInTown.x, landInTown.z, landInTown.d);
 
             // 验证领地被删除
             auto* deletedLand = dataService->findLandAt(175, 175, 0);

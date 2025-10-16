@@ -295,7 +295,7 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
         SECTION("Basic Town Deletion") {
             // 删除城镇
-            dataService->deleteItem<TownData>(townToDelete);
+            dataService->deleteItem<TownData>(townToDelete.x, townToDelete.z, townToDelete.d);
 
             // 验证城镇已被删除
             auto* deletedTown = dataService->findTownAt(750, 750, 0);
@@ -338,7 +338,7 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
             // 删除所有城镇
             for (const auto& town : townsToDelete) {
-                dataService->deleteItem<TownData>(town);
+                dataService->deleteItem<TownData>(town.x, town.z, town.d);
             }
 
             // 验证所有城镇都被删除
@@ -378,7 +378,13 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
 
         SECTION("Basic Permission Modification") {
             // 修改权限为1
-            dataService->modifyItemPermission<TownData>(createdTown, 1);
+            dataService->modifyItemPermission<TownData>(
+                createdTown->getX(),
+                createdTown->getZ(),
+                createdTown->getDimension(),
+                1,
+                PlayerInfo("100000001", "腐竹", true)
+            );
 
             // 验证权限已修改
             auto* updatedTown = dataService->findTownAt(1350, 1350, 0);
@@ -386,7 +392,13 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
             REQUIRE(updatedTown->getPermission() == 1);
 
             // 修改权限为2
-            dataService->modifyItemPermission<TownData>(updatedTown, 2);
+            dataService->modifyItemPermission<TownData>(
+                updatedTown->getX(),
+                updatedTown->getZ(),
+                updatedTown->getDimension(),
+                2,
+                PlayerInfo("100000001", "腐竹", true)
+            );
 
             // 验证权限再次修改
             auto* finalTown = dataService->findTownAt(1350, 1350, 0);
@@ -407,7 +419,13 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
             std::vector<int> testPerms = {1, 2, 3, 4, 5, 10, 100, 0};
 
             for (int perm : testPerms) {
-                dataService->modifyItemPermission<TownData>(createdTown, perm);
+                dataService->modifyItemPermission<TownData>(
+                    createdTown->getX(),
+                    createdTown->getZ(),
+                    createdTown->getDimension(),
+                    perm,
+                    PlayerInfo("100000001", "腐竹", true)
+                );
 
                 auto* town = dataService->findTownAt(1350, 1350, 0);
                 REQUIRE(town != nullptr);
@@ -672,7 +690,8 @@ TEST_CASE("Town Management Integration Tests", "[town][integration]") {
             REQUIRE(createdTown->getOwnerName() == "小明");
 
             // 转让镇长
-            dataService->transferTownMayor(createdTown, "小红");
+            dataService
+                ->transferTownMayor(createdTown->getX(), createdTown->getZ(), createdTown->getDimension(), "小红");
 
             // 验证镇长已转让
             auto* updatedTown = dataService->findTownAt(1750, 1750, 0);

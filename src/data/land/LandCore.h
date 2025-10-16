@@ -3,7 +3,9 @@
 #include "common/LeviLaminaAPI.h"
 #include "data/core/BaseInformation.h"
 #include <basetsd.h>
+#include <format>
 #include <string>
+
 
 
 namespace rlx_land {
@@ -11,6 +13,30 @@ namespace rlx_land {
 class LandData : public BaseData {
 public:
     std::string ownerXuid;
+
+    // 默认构造函数
+    LandData() = default;
+
+    // 完整构造函数
+    LandData(
+        int                             x,
+        int                             z,
+        int                             x_end,
+        int                             z_end,
+        const std::string&              ownerXuid,
+        int                             d,
+        int                             perm,
+        const std::string&              description,
+        const std::vector<std::string>& memberXuids,
+        LONG64                          id
+    );
+
+    // 便利构造函数（用于创建新土地）
+    LandData(int x, int z, int x_end, int z_end, const std::string& ownerXuid, int d, LONG64 id);
+
+private:
+    // 基础数据校验方法
+    static void validateBasicData(int x, int z, int x_end, int z_end, const std::string& ownerXuid, int perm);
 };
 
 class LandInformation : public BaseInformation {

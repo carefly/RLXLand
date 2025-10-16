@@ -46,3 +46,8 @@ class InvalidPlayerInfoException : public std::runtime_error {
 public:
     explicit InvalidPlayerInfoException(const std::string& message) : std::runtime_error(message) {}
 };
+
+class InvalidPermissionException : public std::runtime_error {
+public:
+    explicit InvalidPermissionException(const std::string& message) : std::runtime_error(message) {}
+};

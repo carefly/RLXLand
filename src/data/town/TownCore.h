@@ -3,7 +3,9 @@
 #include "common/LeviLaminaAPI.h"
 #include "data/core/BaseInformation.h"
 #include <basetsd.h>
+#include <format>
 #include <string>
+
 
 
 namespace rlx_land {
@@ -12,6 +14,48 @@ class TownData : public BaseData {
 public:
     std::string name;
     std::string mayorXuid;
+
+    // 默认构造函数
+    TownData() = default;
+
+    // 完整构造函数
+    TownData(
+        int                             x,
+        int                             z,
+        int                             x_end,
+        int                             z_end,
+        const std::string&              name,
+        const std::string&              mayorXuid,
+        int                             d,
+        int                             perm,
+        const std::string&              description,
+        const std::vector<std::string>& memberXuids,
+        LONG64                          id
+    );
+
+    // 便利构造函数（用于创建新城镇）
+    TownData(
+        int                x,
+        int                z,
+        int                x_end,
+        int                z_end,
+        const std::string& name,
+        const std::string& mayorXuid,
+        int                d,
+        LONG64             id
+    );
+
+private:
+    // 基础数据校验方法
+    static void validateBasicData(
+        int                x,
+        int                z,
+        int                x_end,
+        int                z_end,
+        const std::string& name,
+        const std::string& mayorXuid,
+        int                perm
+    );
 };
 
 class TownInformation : public BaseInformation {

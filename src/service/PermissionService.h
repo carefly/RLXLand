@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 class Player;
 
 namespace rlx_land {
@@ -18,6 +19,7 @@ public:
      * @return 如果玩家是操作员则返回true，否则返回false
      */
     bool isOperator(Player const* player) const;
+    bool isOperatorByXuid(const std::string& xuid) const; // 新增
 
 
 private:

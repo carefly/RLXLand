@@ -1,6 +1,7 @@
 #include "TownCommands.h"
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
+#include "common/PlayerInfoUtils.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
 #include "service/PermissionService.h"
@@ -93,10 +94,12 @@ void TownCommands::registerCommands() {
                 // 获取坐标参数或使用默认值
                 int x, z, x_end, z_end;
                 if (param.X != 0 || param.Z != 0 || param.DX != 0 || param.DZ != 0) {
-                    x     = min(param.X, param.DX);
-                    z     = min(param.Z, param.DZ);
-                    x_end = max(param.X, param.DX);
-                    z_end = max(param.Z, param.DZ);
+                    auto [x_min, x_max] = std::minmax(param.X, param.DX);
+                    auto [z_min, z_max] = std::minmax(param.Z, param.DZ);
+                    x                   = x_min;
+                    z                   = z_min;
+                    x_end               = x_max;
+                    z_end               = z_max;
                 } else {
                     // 使用默认值（以玩家位置为中心的100x100区域）
                     x     = (int)sp->getPosition().x - 50;
@@ -106,26 +109,20 @@ void TownCommands::registerCommands() {
                 }
 
                 // 创建城镇数据
-                TownData data;
-                data.id          = DataService::getMaxId<TownData>() + 1;
-                data.name        = townName;
-                data.mayorXuid   = mayorXuid;
-                data.memberXuids = {};
-                data.perm        = 0; // 默认权限
-                data.x           = x;
-                data.z           = z;
-                data.x_end       = x_end;
-                data.z_end       = z_end;
-                data.d           = sp->getDimensionId();
-                data.description = "城镇 " + townName;
+                TownData data(
+                    x,
+                    z,
+                    x_end,
+                    z_end,
+                    townName,
+                    mayorXuid,
+                    sp->getDimensionId(),
+                    DataService::getMaxId<TownData>() + 1
+                );
 
                 try {
                     // 创建PlayerInfo结构
-                    PlayerInfo playerInfo(
-                        sp->getXuid(),
-                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
-                        PermissionService::getInstance().isOperator(sp)
-                    );
+                    auto playerInfo = PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用统一的createItem方法创建城镇
                     DataService::getInstance()->createItem<TownData>(data, playerInfo);
@@ -161,10 +158,8 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                // 创建一个临时的 TownData 用于删除
-                TownData tempData;
-                tempData.id = town->getId();
-                DataService::getInstance()->deleteItem<TownData>(tempData);
+                // 使用城镇的坐标删除城镇
+                DataService::getInstance()->deleteItem<TownData>(town->getX(), town->getZ(), town->getDimension());
 
                 output.success("删除城镇: " + townName);
                 break;
@@ -203,8 +198,9 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                // transferTownMayor 是 Town 特有的方法，需要保留
-                DataService::getInstance()->transferTownMayor(town, newXuid);
+                // 使用新的坐标参数转让镇长
+                DataService::getInstance()
+                    ->transferTownMayor(town->getX(), town->getZ(), town->getDimension(), newXuid);
 
                 output.success("转让城镇 " + townName + " 给 " + playerName);
                 break;
@@ -256,7 +252,15 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataService::getInstance()->addItemMember<TownData>(town, memberName);
+                        auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
+
+                        DataService::getInstance()->addItemMember<TownData>(
+                            (int)pos.x,
+                            (int)pos.z,
+                            sp->getDimensionId(),
+                            currentPlayer,
+                            memberName
+                        );
                     } catch (const PlayerNotFoundException&) {
 
                         output.error("找不到玩家: " + playerName);
@@ -273,7 +277,15 @@ void TownCommands::registerCommands() {
                     auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
 
                     try {
-                        DataService::getInstance()->removeItemMember<TownData>(town, memberName);
+                        auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
+
+                        DataService::getInstance()->removeItemMember<TownData>(
+                            (int)pos.x,
+                            (int)pos.z,
+                            sp->getDimensionId(),
+                            currentPlayer,
+                            memberName
+                        );
                     } catch (const PlayerNotFoundException&) {
                         output.error("找不到玩家: " + playerName);
                     } catch (const NotMemberException&) {
@@ -322,7 +334,14 @@ void TownCommands::registerCommands() {
 
             switch (operation) {
             case TownCommandPermOperation::perm: {
-                DataService::getInstance()->modifyItemPermission<TownData>(currentTown, perm);
+                auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
+                DataService::getInstance()->modifyItemPermission<TownData>(
+                    currentTown->getX(),
+                    currentTown->getZ(),
+                    currentTown->getDimension(),
+                    perm,
+                    currentPlayer
+                );
                 output.success("设置权限为: " + std::to_string(perm));
                 break;
             }

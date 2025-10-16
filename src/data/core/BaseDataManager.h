@@ -25,7 +25,7 @@ public:
     void create(T data);
 
     // 删除数据项
-    void remove(T data);
+    void remove(LONG64 id);
 
     // 修改权限
     void modifyPerm(U* info, int perm);

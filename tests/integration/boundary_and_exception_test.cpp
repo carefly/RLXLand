@@ -350,11 +350,12 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
         SECTION("Null Pointer Handling") {
             SECTION("Null Land Information") {
-                // 测试空领地信息指针
-                LandInformation* nullLand = nullptr;
 
                 // 验证空指针操作抛出异常
-                REQUIRE_THROWS_AS(dataService->modifyItemPermission<LandData>(nullLand, 1), RealmNotFoundException);
+                REQUIRE_THROWS_AS(
+                    dataService->modifyItemPermission<LandData>(0, 0, 0, 1, PlayerInfo("200000001", "小明", false)),
+                    RealmNotFoundException
+                );
 
                 // 使用确实没有land的坐标进行测试
                 LONG64 testX   = 888888;
@@ -379,11 +380,12 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
             }
 
             SECTION("Null Town Information") {
-                // 测试空城镇信息指针
-                TownInformation* nullTown = nullptr;
 
                 // 验证空指针操作抛出异常
-                REQUIRE_THROWS_AS(dataService->modifyItemPermission<TownData>(nullTown, 1), RealmNotFoundException);
+                REQUIRE_THROWS_AS(
+                    dataService->modifyItemPermission<TownData>(0, 0, 0, 1, PlayerInfo("100000001", "腐竹", true)),
+                    RealmNotFoundException
+                );
 
                 // // 使用确实没有town的坐标进行测试
                 LONG64 testX   = 777777;
@@ -395,17 +397,16 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
                 REQUIRE(verifyTown == nullptr);
 
                 // // 根据修复后的实现，当找不到town时抛出的是RealmNotFoundException
-                // REQUIRE_THROWS_AS(
-                //     dataService
-                //         ->addItemMember<TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true),
-                //         "小明"),
-                //     RealmNotFoundException
-                // );
-                // REQUIRE_THROWS_AS(
-                //     dataService->removeItemMember<
-                //         TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true), "小明"),
-                //     RealmNotFoundException
-                // );
+                REQUIRE_THROWS_AS(
+                    dataService
+                        ->addItemMember<TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true), "小明"),
+                    RealmNotFoundException
+                );
+                REQUIRE_THROWS_AS(
+                    dataService->removeItemMember<
+                        TownData>(testX, testZ, testDim, PlayerInfo("100000001", "腐竹", true), "小明"),
+                    RealmNotFoundException
+                );
             }
         }
 
@@ -637,12 +638,18 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
             REQUIRE(createdLand->getPermission() == INT_MAX);
 
             // 测试权限修改
-            dataService->modifyItemPermission<LandData>(createdLand, INT_MAX);
+            dataService->modifyItemPermission<LandData>(
+                createdLand->getX(),
+                createdLand->getZ(),
+                createdLand->getDimension(),
+                INT_MAX,
+                PlayerInfo("200000001", "小明", false)
+            );
             REQUIRE(createdLand->getPermission() == INT_MAX);
         }
 
         SECTION("Negative Permission Value") {
-            // 测试负权限值
+            // 测试创建负权限值的领地应该抛出异常
             LandData negPermLand;
             negPermLand.ownerXuid = "200000002";
             negPermLand.x         = 200;
@@ -654,15 +661,43 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
             negPermLand.id        = dataService->getMaxId<LandData>() + 1;
 
             PlayerInfo playerInfo("200000002", "小红", false);
-            dataService->createItem<LandData>(negPermLand, playerInfo);
 
+            // 创建负权限值的领地应该抛出异常
+            REQUIRE_THROWS_AS(dataService->createItem<LandData>(negPermLand, playerInfo), InvalidPermissionException);
+
+            // 验证领地确实没有被创建
+            auto* notCreatedLand = dataService->findLandAt(225, 225, 0);
+            REQUIRE(notCreatedLand == nullptr);
+
+            // 测试正常权限值的领地创建
+            LandData normalPermLand;
+            normalPermLand.ownerXuid = "200000002";
+            normalPermLand.x         = 200;
+            normalPermLand.z         = 200;
+            normalPermLand.x_end     = 250;
+            normalPermLand.z_end     = 250;
+            normalPermLand.d         = 0;
+            normalPermLand.perm      = 0; // 正常权限值
+            normalPermLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            dataService->createItem<LandData>(normalPermLand, playerInfo);
             auto* createdLand = dataService->findLandAt(225, 225, 0);
             REQUIRE(createdLand != nullptr);
-            REQUIRE(createdLand->getPermission() == -1);
+            REQUIRE(createdLand->getPermission() == 0);
 
-            // 测试权限修改为负值
-            dataService->modifyItemPermission<LandData>(createdLand, -100);
-            REQUIRE(createdLand->getPermission() == -100);
+            // 测试权限修改为负值应该抛出异常
+            REQUIRE_THROWS_AS(
+                dataService->modifyItemPermission<LandData>(
+                    createdLand->getX(),
+                    createdLand->getZ(),
+                    createdLand->getDimension(),
+                    -100,
+                    PlayerInfo("200000002", "小红", false)
+                ),
+                InvalidPermissionException
+            );
+            // 验证权限值没有被修改
+            REQUIRE(createdLand->getPermission() == 0);
         }
     }
 

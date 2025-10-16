@@ -602,7 +602,7 @@ TEST_CASE("Spatial Query and Boundary Check Tests", "[spatial][query][boundary]"
             REQUIRE(landBefore != nullptr);
 
             // 删除领地
-            dataService->deleteItem<LandData>(initialLand);
+            dataService->deleteItem<LandData>(initialLand.x, initialLand.z, initialLand.d);
 
             // 验证查询返回空
             auto* landAfter = dataService->findLandAt(150, 150, 0);
@@ -663,8 +663,8 @@ TEST_CASE("Spatial Query and Boundary Check Tests", "[spatial][query][boundary]"
             }
 
             // 删除部分领地
-            dataService->deleteItem<LandData>(lands[1]); // 删除第二个领地
-            dataService->deleteItem<LandData>(lands[3]); // 删除第四个领地
+            dataService->deleteItem<LandData>(lands[1].x, lands[1].z, lands[1].d); // 删除第二个领地
+            dataService->deleteItem<LandData>(lands[3].x, lands[3].z, lands[3].d); // 删除第四个领地
 
             // 验证删除的领地查询不到
             auto* deletedLand1 = dataService->findLandAt(425, 425, 0);

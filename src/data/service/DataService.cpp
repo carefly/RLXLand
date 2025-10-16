@@ -28,7 +28,13 @@ std::shared_ptr<DataService> DataService::getInstance() {
 }
 
 // Town 特有的方法实现
-void DataService::transferTownMayor(TownInformation* ti, const std::string& playerName) {
+void DataService::transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName) {
+    // 1. 验证城镇是否存在
+    auto ti = findTownAt(x, z, dimension);
+    if (ti == nullptr) {
+        throw RealmNotFoundException("找不到指定的城镇");
+    }
+
     townManager->transferMayor(ti, playerName);
 }
 
@@ -87,13 +93,13 @@ void DataService::createItem(typename DataLoaderTraits<T>::DataType data, const 
 }
 
 template <typename T>
-void DataService::deleteItem(typename DataLoaderTraits<T>::DataType data) {
-    deleteItemInternal<T>(std::move(data), getManager<T>());
+void DataService::deleteItem(LONG64 x, LONG64 z, int dimension) {
+    deleteItemInternal<T>(x, z, dimension, getManager<T>());
 }
 
 template <typename T>
-void DataService::modifyItemPermission(typename DataLoaderTraits<T>::InfoType* info, int perm) {
-    modifyItemPermissionInternal<T>(info, perm, getManager<T>());
+void DataService::modifyItemPermission(LONG64 x, LONG64 z, int dimension, int perm, const PlayerInfo& playerInfo) {
+    modifyItemPermissionInternal<T>(x, z, dimension, perm, playerInfo, getManager<T>());
 }
 
 template <typename T>
@@ -248,25 +254,56 @@ void DataService::createItemInternal(
 
 template <typename T>
 void DataService::deleteItemInternal(
-    typename DataLoaderTraits<T>::DataType     data,
+    LONG64                                     x,
+    LONG64                                     z,
+    int                                        dimension,
     typename DataLoaderTraits<T>::ManagerType* manager
 ) {
     using InfoType = typename DataLoaderTraits<T>::InfoType;
 
-    manager->remove(std::move(data));
+    // 1. 查找目标位置的项目
+    auto info = findItemAt<T>(x, z, dimension);
+    if (info == nullptr) {
+        throw RealmNotFoundException("找不到指定的项目");
+    }
+
+    // 2. 构造DataType用于删除
+    typename DataLoaderTraits<T>::DataType data;
+    data.x     = info->getX();
+    data.z     = info->getZ();
+    data.x_end = info->getXEnd();
+    data.z_end = info->getZEnd();
+    data.d     = info->getDimension();
+    data.id    = info->getId();
+
+    manager->remove(data.id);
 
     updateSpatialMapRange<InfoType>(nullptr, data.x, data.z, data.x_end, data.z_end, data.d);
 }
 
 template <typename T>
 void DataService::modifyItemPermissionInternal(
-    typename DataLoaderTraits<T>::InfoType*    info,
+    LONG64                                     x,
+    LONG64                                     z,
+    int                                        dimension,
     int                                        perm,
+    const PlayerInfo&                          playerInfo,
     typename DataLoaderTraits<T>::ManagerType* manager
 ) {
-    if (info == nullptr) {
-        throw RealmNotFoundException("领地信息为空");
+    if (perm < 0) {
+        throw InvalidPermissionException("perm 不能小于0");
     }
+
+    auto info = findItemAt<T>(x, z, dimension);
+    if (info == nullptr) {
+        throw RealmNotFoundException("找不到指定的项目");
+    }
+
+    // 验证所有权
+    if (!info->isOwner(playerInfo.xuid) && !playerInfo.isOperator) {
+        throw RealmPermissionException("你不是领地主人");
+    }
+
     manager->modifyPerm(info, perm);
 }
 
@@ -306,8 +343,9 @@ void DataService::updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2
 // 显式模板实例化
 template void DataService::loadItems<LandData>();
 template void DataService::createItem<LandData>(LandData data, const PlayerInfo& playerInfo);
-template void DataService::deleteItem<LandData>(LandData data);
-template void DataService::modifyItemPermission<LandData>(LandInformation* info, int perm);
+template void DataService::deleteItem<LandData>(LONG64 x, LONG64 z, int dimension);
+template void
+DataService::modifyItemPermission<LandData>(LONG64 x, LONG64 z, int dimension, int perm, const PlayerInfo& playerInfo);
 template void DataService::addItemMember<
     LandData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
 template void DataService::removeItemMember<
@@ -317,8 +355,9 @@ template std::vector<LandInformation*> DataService::getAllItems<LandData>();
 
 template void DataService::loadItems<TownData>();
 template void DataService::createItem<TownData>(TownData data, const PlayerInfo& playerInfo);
-template void DataService::deleteItem<TownData>(TownData data);
-template void DataService::modifyItemPermission<TownData>(TownInformation* info, int perm);
+template void DataService::deleteItem<TownData>(LONG64 x, LONG64 z, int dimension);
+template void
+DataService::modifyItemPermission<TownData>(LONG64 x, LONG64 z, int dimension, int perm, const PlayerInfo& playerInfo);
 template void DataService::addItemMember<
     TownData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
 template void DataService::removeItemMember<
@@ -358,6 +397,7 @@ void DataService::validatePlayerInfo(const PlayerInfo& playerInfo) {
 
 void DataService::validateLandCreation(const LandData& data, const PlayerInfo& playerInfo) {
     validateCoordinatesRange<LandData>(data);
+    validatePermission(data.perm);
     validateTownPermission(data, playerInfo);
     validateLandConflict(data);
 }
@@ -416,6 +456,7 @@ void DataService::validateLandConflict(const LandData& data) {
 // Town验证方法实现
 void DataService::validateTownCreation(const TownData& data, const PlayerInfo& playerInfo) {
     validateCoordinatesRange<TownData>(data);
+    validatePermission(data.perm);
     validateOperatorPermission(playerInfo);
     validateTownOverlap(data);
 }
@@ -437,6 +478,12 @@ void DataService::validateTownOverlap(const TownData& data) {
                 );
             }
         }
+    }
+}
+
+void DataService::validatePermission(int perm) {
+    if (perm < 0) {
+        throw InvalidPermissionException("perm 不能小于0");
     }
 }
 

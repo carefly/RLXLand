@@ -282,7 +282,7 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
         SECTION("Basic Land Deletion") {
             // 删除领地
-            dataService->deleteItem<LandData>(landToDelete);
+            dataService->deleteItem<LandData>(landToDelete.x, landToDelete.z, landToDelete.d);
 
             // 验证领地已被删除
             auto* deletedLand = dataService->findLandAt(325, 325, 0);
@@ -324,7 +324,7 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(land2->getOwnerXuid() == "200000002");
 
             // 删除第一个领地
-            dataService->deleteItem<LandData>(landToDelete);
+            dataService->deleteItem<LandData>(landToDelete.x, landToDelete.z, landToDelete.d);
 
             // 验证第一个领地被删除，第二个领地仍然存在
             auto* deletedLand1  = dataService->findLandAt(325, 325, 0);
@@ -359,7 +359,7 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             // 删除不存在的领地应该不会抛出异常（注意：实际实现可能会抛出异常）
             // 这里我们验证即使抛出异常，原领地数据仍然正确
             try {
-                dataService->deleteItem<LandData>(nonExistentLand);
+                dataService->deleteItem<LandData>(nonExistentLand.x, nonExistentLand.z, nonExistentLand.d);
             } catch (const std::exception&) {
                 // 忽略删除不存在领地的异常
             }
@@ -409,7 +409,7 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
             // 删除所有领地
             for (const auto& land : landsToDelete) {
-                dataService->deleteItem<LandData>(land);
+                dataService->deleteItem<LandData>(land.x, land.z, land.d);
             }
 
             // 验证所有领地都被删除
@@ -474,7 +474,7 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
         REQUIRE(landInDim1->getDimension() == 1);
 
         // 删除维度0的领地
-        dataService->deleteItem<LandData>(landDim0);
+        dataService->deleteItem<LandData>(landDim0.x, landDim0.z, landDim0.d);
 
         // 验证维度0的领地被删除，维度1的领地仍然存在
         auto* deletedLandDim0  = dataService->findLandAt(110, 110, 0);
@@ -518,7 +518,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
 
         SECTION("Basic Permission Modification") {
             // 修改权限为1
-            dataService->modifyItemPermission<LandData>(createdLand, 1);
+            dataService->modifyItemPermission<LandData>(
+                createdLand->getX(),
+                createdLand->getZ(),
+                createdLand->getDimension(),
+                1,
+                PlayerInfo("200000001", "小明", false)
+            );
 
             // 验证权限已修改
             auto* updatedLand = dataService->findLandAt(725, 725, 0);
@@ -526,7 +532,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(updatedLand->getPermission() == 1);
 
             // 修改权限为2
-            dataService->modifyItemPermission<LandData>(updatedLand, 2);
+            dataService->modifyItemPermission<LandData>(
+                updatedLand->getX(),
+                updatedLand->getZ(),
+                updatedLand->getDimension(),
+                2,
+                PlayerInfo("200000001", "小明", false)
+            );
 
             // 验证权限再次修改
             auto* finalLand = dataService->findLandAt(725, 725, 0);
@@ -548,7 +560,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             std::vector<int> testPerms = {1, 2, 3, 4, 5, 10, 100, 0};
 
             for (int perm : testPerms) {
-                dataService->modifyItemPermission<LandData>(createdLand, perm);
+                dataService->modifyItemPermission<LandData>(
+                    createdLand->getX(),
+                    createdLand->getZ(),
+                    createdLand->getDimension(),
+                    perm,
+                    PlayerInfo("200000001", "小明", false)
+                );
 
                 auto* land = dataService->findLandAt(725, 725, 0);
                 REQUIRE(land != nullptr);
@@ -972,7 +990,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(integrationLand != nullptr);
 
             // 修改权限
-            dataService->modifyItemPermission<LandData>(integrationLand, 3);
+            dataService->modifyItemPermission<LandData>(
+                integrationLand->getX(),
+                integrationLand->getZ(),
+                integrationLand->getDimension(),
+                3,
+                PlayerInfo("200000003", "张三", false)
+            );
             REQUIRE(integrationLand->getPermission() == 3);
 
             // 添加成员
@@ -997,7 +1021,13 @@ TEST_CASE("Land Management Integration Tests", "[land][integration]") {
             REQUIRE(integrationLand->getMemberXuids().size() == 2);
 
             // 再次修改权限
-            dataService->modifyItemPermission<LandData>(integrationLand, 5);
+            dataService->modifyItemPermission<LandData>(
+                integrationLand->getX(),
+                integrationLand->getZ(),
+                integrationLand->getDimension(),
+                5,
+                PlayerInfo("200000003", "张三", false)
+            );
             REQUIRE(integrationLand->getPermission() == 5);
 
             // 移除一个成员

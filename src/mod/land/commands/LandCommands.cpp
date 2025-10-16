@@ -1,5 +1,6 @@
 #include "LandCommands.h"
 #include "common/LeviLaminaAPI.h"
+#include "common/PlayerInfoUtils.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
 #include "mod/town/Town.h"
@@ -8,7 +9,6 @@
 
 
 #include <basetsd.h>
-#include <cstddef>
 #include <ll/api/event/EventBus.h>
 #include <ll/api/event/ListenerBase.h>
 #include <ll/api/event/entity/ActorHurtEvent.h>
@@ -142,45 +142,26 @@ void LandCommands::registerCommands() {
 
                 if (ita == landBuyA.end() || itb == landBuyB.end()) return;
 
-                int x, z, x_end, z_end, d;
-                d     = sp->getDimensionId();
-                x     = min(ita->second.first, itb->second.first);
-                x_end = max(ita->second.first, itb->second.first);
-                z     = min(ita->second.second, itb->second.second);
-                z_end = max(ita->second.second, itb->second.second);
-
-                int area = (x_end - x) * (z_end - z);
+                int d           = sp->getDimensionId();
+                auto [x, x_end] = std::minmax(ita->second.first, itb->second.first);
+                auto [z, z_end] = std::minmax(ita->second.second, itb->second.second);
+                int area = (x_end - x) * (z_end - z), pay = area;
 
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
                 landBuyB.erase(xuid);
 
-                int pay = area;
                 // auto res = RLXMoney::getInstance().addMoney(xuid, -pay);
                 // if (!res) {
                 //     output.error("钱不够了，缺钱可以找腐竹免费领取");
                 //     return;
                 // }
 
-                LandData data;
-                data.x           = x;
-                data.z           = z;
-                data.x_end       = x_end;
-                data.z_end       = z_end;
-                data.ownerXuid   = xuid;
-                data.d           = d;
-                data.perm        = 0;
-                data.description = "";
-                data.memberXuids = {};
-                data.id          = DataService::getMaxId<LandData>() + 1;
+                LandData data(x, z, x_end, z_end, xuid, d, DataService::getMaxId<LandData>() + 1);
 
                 try {
                     // 创建PlayerInfo结构
-                    PlayerInfo playerInfo(
-                        sp->getXuid(),
-                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
-                        PermissionService::getInstance().isOperator(sp)
-                    );
+                    auto playerInfo = PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用统一的createItem方法创建土地
                     DataService::getInstance()->createItem<LandData>(data, playerInfo);
@@ -204,10 +185,8 @@ void LandCommands::registerCommands() {
                 }
                 int pay = li->getArea(); // 使用便利函数计算面积
                 // RLXMoney::getInstance().addMoney(li->getOwnerXuid(), pay);
-                // 创建一个临时的 LandData 用于删除
-                LandData tempData;
-                tempData.id = li->getId();
-                DataService::getInstance()->deleteItem<LandData>(tempData);
+                // 使用新的坐标参数删除领地
+                DataService::getInstance()->deleteItem<LandData>((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
             } else if (LandCommandBasicOperation::query == operation) {
                 auto pos  = sp->getPosition();
@@ -262,12 +241,8 @@ void LandCommands::registerCommands() {
 
             if (LandCommandTrustOperation::trust == operation) {
                 try {
-                    auto       pos = sp->getPosition();
-                    PlayerInfo currentPlayer(
-                        sp->getXuid(),
-                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
-                        PermissionService::getInstance().isOperator(sp)
-                    );
+                    auto pos           = sp->getPosition();
+                    auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用新的带验证的addItemMember接口
                     DataService::getInstance()->addItemMember<LandData>(
@@ -290,12 +265,8 @@ void LandCommands::registerCommands() {
 
             } else if (LandCommandTrustOperation::untrust == operation) {
                 try {
-                    auto       pos = sp->getPosition();
-                    PlayerInfo currentPlayer(
-                        sp->getXuid(),
-                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
-                        PermissionService::getInstance().isOperator(sp)
-                    );
+                    auto pos           = sp->getPosition();
+                    auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用新的带验证的removeItemMember接口
                     DataService::getInstance()->removeItemMember<LandData>(
@@ -334,29 +305,21 @@ void LandCommands::registerCommands() {
 
             if (LandCommandPermOperation::perm == operation) {
                 try {
-                    auto       pos = sp->getPosition();
-                    PlayerInfo currentPlayer(
-                        sp->getXuid(),
-                        LeviLaminaAPI::getPlayerNameByXuid(sp->getXuid()),
-                        PermissionService::getInstance().isOperator(sp)
+                    auto pos           = sp->getPosition();
+                    auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
+
+                    DataService::getInstance()->modifyItemPermission<LandData>(
+                        (int)pos.x,
+                        (int)pos.z,
+                        sp->getDimensionId(),
+                        perm_num,
+                        currentPlayer
                     );
-
-                    // 验证领地所有权
-                    auto li =
-                        DataService::getInstance()->findItemAt<LandData>((int)pos.x, (int)pos.z, sp->getDimensionId());
-                    if (li == nullptr || (!li->isOwner(currentPlayer.xuid) && !currentPlayer.isOperator)) {
-                        throw RealmPermissionException("你不是领地主人");
-                    }
-
-                    if (perm_num < 0) {
-                        output.error("perm 不能小于0");
-                        return;
-                    }
-
-                    DataService::getInstance()->modifyItemPermission<LandData>(li, perm_num);
                     output.success(format("领地权限更改为 {}", perm_num));
 
                 } catch (const RealmPermissionException& e) {
+                    output.error(e.what());
+                } catch (const InvalidPermissionException& e) {
                     output.error(e.what());
                 }
             }
