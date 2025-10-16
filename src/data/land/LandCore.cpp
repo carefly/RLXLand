@@ -1,6 +1,7 @@
 #include "LandCore.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
+#include <format>
 
 namespace rlx_land {
 

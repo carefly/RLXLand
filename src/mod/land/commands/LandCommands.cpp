@@ -4,7 +4,6 @@
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
 #include "mod/town/Town.h"
-#include "mod/town/permissions/TownPermissionChecker.h"
 #include "service/PermissionService.h"
 
 
