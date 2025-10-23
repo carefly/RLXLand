@@ -81,7 +81,10 @@ if has_config("tests") then
         add_files("src/data/town/TownCore.cpp")
         add_files("src/data/service/DataService.cpp")
         add_files("src/common/JsonLoader.cpp")
-        -- 注意：不添加 src/common/LeviLaminaAPI.cpp，使用覆盖版本
+        add_files("src/common/PathConfig.cpp")  -- 添加PathConfig实现
+        add_files("src/data/core/PlayerEconomyData.cpp")  -- 添加PlayerEconomyData实现
+        add_files("src/data/economy/EconomyDataManager.cpp")  -- 添加EconomyDataManager实现
+        add_files("src/service/EconomyService.cpp")  -- 添加EconomyService实现
         add_files("tests/overrides/mod/RLXLand.cpp")  -- 添加 RLXLand 覆盖实现
         add_files("src/mod/town/permissions/TownPermissionChecker.cpp")  -- 添加权限检查器实现
         

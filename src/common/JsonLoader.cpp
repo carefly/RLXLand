@@ -1,20 +1,24 @@
-#include "mod/RLXLand.h"
-
 #include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
+#include "common/PathConfig.h"
 #include "common/Utf8Utils.h"
 #include "data/land/LandCore.h"
 #include "data/town/TownCore.h"
+#include "mod/RLXLand.h"
 #include <fstream>
 #include <ranges>
 
 
 namespace rlx_land {
 
+
 // 路径管理方法
-std::string JsonLoader::getLandsBaseDir() { return "../RLXModeResources/data/lands"; }
-std::string JsonLoader::getTownsBaseDir() { return "../RLXModeResources/data/towns"; }
-std::string JsonLoader::getTownsJsonFile() { return "../RLXModeResources/data/towns/towns.json"; }
+
+std::string JsonLoader::getLandsBaseDir() { return PathConfig::LANDS_BASE_DIR; }
+
+std::string JsonLoader::getTownsBaseDir() { return PathConfig::TOWNS_BASE_DIR; }
+
+std::string JsonLoader::getTownsJsonFile() { return PathConfig::TOWNS_JSON_FILE; }
 
 
 std::string JsonLoader::generatePlayerFileName(const std::string& xuid, const std::string& playerName) {

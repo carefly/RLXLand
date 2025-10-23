@@ -29,6 +29,8 @@ class DataService {
 public:
     static std::shared_ptr<DataService> getInstance();
 
+    void initialize(); // 初始化数据服务，加载已存数据
+
     template <typename T>
     void loadItems();
 

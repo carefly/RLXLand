@@ -1,4 +1,4 @@
-#include "LandEventHandlers.h"
+#include "CommonEventHandlers.h"
 #include "data/service/DataService.h"
 #include "mod/land/permissions/LandPermissionChecker.h"
 
@@ -38,7 +38,7 @@ namespace rlx_land {
 // 全局变量
 unordered_map<string, Vec3> playerPosPre;
 
-void LandEventHandlers::registerEventListeners() {
+void CommonEventHandlers::registerEventListeners() {
     auto& eventBus = ll::event::EventBus::getInstance();
 
     // 破坏方块事件
@@ -86,7 +86,7 @@ void LandEventHandlers::registerEventListeners() {
         });
 }
 
-// Hook函数定义（从原始代码中复制）
+// Hook函数定义
 LL_TYPE_INSTANCE_HOOK(
     PlayerUseFrameHook1,
     HookPriority::Normal,
@@ -192,7 +192,7 @@ LL_TYPE_INSTANCE_HOOK(
     }
 }
 
-void LandEventHandlers::hookAllFunctions() {
+void CommonEventHandlers::hookAllFunctions() {
     // Hook函数注册
     UseFrameHook2::hook();
     StartDestroyBlockHook::hook();

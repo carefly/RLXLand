@@ -1,7 +1,7 @@
 #include "Land.h"
 #include "commands/LandCommands.h"
 #include "data/service/DataService.h"
-#include "events/LandEventHandlers.h"
+#include "mod/events/CommonEventHandlers.h"
 #include "mod/RLXLand.h"
 
 
@@ -21,10 +21,10 @@ bool Land::enable() {
     LandCommands::registerCommands();
 
     // 注册事件监听器
-    LandEventHandlers::registerEventListeners();
+    CommonEventHandlers::registerEventListeners();
 
     // Hook函数注册
-    LandEventHandlers::hookAllFunctions();
+    CommonEventHandlers::hookAllFunctions();
 
     return true;
 }

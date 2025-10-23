@@ -27,6 +27,14 @@ std::shared_ptr<DataService> DataService::getInstance() {
     return instance;
 }
 
+void DataService::initialize() {
+    // 加载所有领地数据
+    loadItems<LandData>();
+
+    // 加载所有城镇数据
+    loadItems<TownData>();
+}
+
 // Town 特有的方法实现
 void DataService::transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName) {
     // 1. 验证城镇是否存在

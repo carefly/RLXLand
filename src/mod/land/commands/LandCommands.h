@@ -6,7 +6,7 @@ namespace rlx_land {
 
 enum LandCommandBasicOperation : int { buy = 1, sell = 2, query = 3, a = 4, b = 5, exit = 6 };
 enum LandCommandTrustOperation : int { trust = 0, untrust = 1 };
-enum LandCommandPermOperation : int { perm = 0 };
+enum LandCommandPermOperation : int { perm_operation = 0 };
 
 struct LandBasicCommad {
     LandCommandBasicOperation Operation{static_cast<LandCommandBasicOperation>(0)};

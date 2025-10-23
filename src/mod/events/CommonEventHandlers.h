@@ -2,7 +2,7 @@
 
 namespace rlx_land {
 
-class LandEventHandlers {
+class CommonEventHandlers {
 public:
     static void registerEventListeners();
     static void hookAllFunctions();

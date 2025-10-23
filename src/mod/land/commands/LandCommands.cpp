@@ -4,8 +4,8 @@
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
 #include "mod/town/Town.h"
+#include "service/EconomyService.h"
 #include "service/PermissionService.h"
-
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
@@ -144,17 +144,24 @@ void LandCommands::registerCommands() {
                 int d           = sp->getDimensionId();
                 auto [x, x_end] = std::minmax(ita->second.first, itb->second.first);
                 auto [z, z_end] = std::minmax(ita->second.second, itb->second.second);
-                int area = (x_end - x) * (z_end - z), pay = area;
+                int     area    = (x_end - x) * (z_end - z);
+                int64_t pay     = EconomyService::getLandPurchaseCost(area); // 使用经济服务计算费用
 
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
                 landBuyB.erase(xuid);
 
-                // auto res = RLXMoney::getInstance().addMoney(xuid, -pay);
-                // if (!res) {
-                //     output.error("钱不够了，缺钱可以找腐竹免费领取");
-                //     return;
-                // }
+                // 检查玩家是否有足够的金钱
+                if (!EconomyService::hasSufficientFunds(xuid, pay)) {
+                    output.error("金钱不足，无法购买领地，需要 {} 金币", pay);
+                    return;
+                }
+
+                // 扣除玩家金钱
+                if (!EconomyService::deductLandPurchaseFee(xuid, pay)) {
+                    output.error("扣款失败，请联系管理员");
+                    return;
+                }
 
                 LandData data(x, z, x_end, z_end, xuid, d, DataService::getMaxId<LandData>() + 1);
 
@@ -166,12 +173,20 @@ void LandCommands::registerCommands() {
                     DataService::getInstance()->createItem<LandData>(data, playerInfo);
                     output.success(format("买入领地成功，领地面积为 {}，共花费 {} 元", area, pay));
                 } catch (const RealmOutOfRangeException& e) {
+                    // 如果创建失败，退还玩家金钱
+                    EconomyService::addIncome(xuid, pay);
                     output.error(e.what());
                 } catch (const RealmPermissionException& e) {
+                    // 如果创建失败，退还玩家金钱
+                    EconomyService::addIncome(xuid, pay);
                     output.error(e.what());
                 } catch (const RealmConflictException& e) {
+                    // 如果创建失败，退还玩家金钱
+                    EconomyService::addIncome(xuid, pay);
                     output.error(e.what());
                 } catch (const std::exception& e) {
+                    // 如果创建失败，退还玩家金钱
+                    EconomyService::addIncome(xuid, pay);
                     output.error(format("创建领地时发生错误: {}", e.what()));
                 }
             } else if (LandCommandBasicOperation::sell == operation) {
@@ -182,8 +197,9 @@ void LandCommands::registerCommands() {
                     output.error("该位置不是你的领地");
                     return;
                 }
-                int pay = li->getArea(); // 使用便利函数计算面积
-                // RLXMoney::getInstance().addMoney(li->getOwnerXuid(), pay);
+                int64_t pay = EconomyService::getLandPurchaseCost(li->getArea()); // 使用经济服务计算费用
+                // 增加玩家金钱
+                EconomyService::addIncome(li->getOwnerXuid(), pay);
                 // 使用新的坐标参数删除领地
                 DataService::getInstance()->deleteItem<LandData>((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
@@ -302,7 +318,7 @@ void LandCommands::registerCommands() {
             auto  operation = param.Operation;
             auto  perm_num  = param.Perm;
 
-            if (LandCommandPermOperation::perm == operation) {
+            if (LandCommandPermOperation::perm_operation == operation) {
                 try {
                     auto pos           = sp->getPosition();
                     auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
