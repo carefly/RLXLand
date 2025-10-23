@@ -21,6 +21,8 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
     rlx_land::LeviLaminaAPI::addMockPlayer("200000001", "小明");
     rlx_land::LeviLaminaAPI::addMockPlayer("200000002", "小红");
     rlx_land::LeviLaminaAPI::addMockPlayer("200000003", "张三");
+    rlx_land::LeviLaminaAPI::addMockPlayer("200000004", "李四", false);
+    rlx_land::LeviLaminaAPI::addMockPlayer("200000005", "王五", false);
 
     SECTION("Land Boundary Tests") {
         SECTION("Land at Positive Boundary") {
@@ -847,6 +849,224 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
                     dataService->createItem<TownData>(testTown, invalidPlayerInfo),
                     InvalidPlayerInfoException
                 );
+            }
+        }
+    }
+
+    SECTION("Extreme Boundary Conditions Supplement") {
+        SECTION("Maximum Coordinate Values") {
+            // 测试接近LAND_RANGE的最大坐标值
+            LandData maxCoordLand;
+            maxCoordLand.ownerXuid = "200000001";
+            maxCoordLand.x         = LAND_RANGE - 1;
+            maxCoordLand.z         = LAND_RANGE - 1;
+            maxCoordLand.x_end     = LAND_RANGE;
+            maxCoordLand.z_end     = LAND_RANGE;
+            maxCoordLand.d         = 0;
+            maxCoordLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            PlayerInfo playerInfo("200000001", "小明", false);
+
+            // 验证边界值可以创建
+            REQUIRE_NOTHROW(dataService->createItem<LandData>(maxCoordLand, playerInfo));
+
+            auto* createdLand = dataService->findLandAt(LAND_RANGE - 1, LAND_RANGE - 1, 0);
+            REQUIRE(createdLand != nullptr);
+            REQUIRE(createdLand->getOwnerXuid() == "200000001");
+
+            // 测试边界查询
+            auto* boundaryLand1 = dataService->findLandAt(LAND_RANGE, LAND_RANGE, 0);
+            REQUIRE(boundaryLand1 != nullptr);
+
+            // 测试超出边界1格
+            auto* outOfBoundLand = dataService->findLandAt(LAND_RANGE + 1, LAND_RANGE, 0);
+            REQUIRE(outOfBoundLand == nullptr);
+        }
+
+        SECTION("Minimum Coordinate Values") {
+            // 测试接近-LAND_RANGE的最小坐标值
+            LandData minCoordLand;
+            minCoordLand.ownerXuid = "200000002";
+            minCoordLand.x         = -LAND_RANGE;
+            minCoordLand.z         = -LAND_RANGE;
+            minCoordLand.x_end     = -LAND_RANGE + 1;
+            minCoordLand.z_end     = -LAND_RANGE + 1;
+            minCoordLand.d         = 0;
+            minCoordLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            PlayerInfo playerInfo("200000002", "小红", false);
+
+            // 验证边界值可以创建
+            REQUIRE_NOTHROW(dataService->createItem<LandData>(minCoordLand, playerInfo));
+
+            auto* createdLand = dataService->findLandAt(-LAND_RANGE, -LAND_RANGE, 0);
+            REQUIRE(createdLand != nullptr);
+            REQUIRE(createdLand->getOwnerXuid() == "200000002");
+
+            // 测试超出负边界1格
+            auto* outOfBoundLand = dataService->findLandAt(-LAND_RANGE - 1, -LAND_RANGE, 0);
+            REQUIRE(outOfBoundLand == nullptr);
+        }
+
+        SECTION("Town with Special Characters in Name") {
+            // 测试包含特殊字符的城镇名称
+            std::vector<std::string> specialNames =
+                {"城镇@#$%", "Town with Spaces", "城镇_下划线", "123数字城镇", "混合Mixed城镇", "城镇-横线", "城镇.点号"
+                };
+
+            for (const auto& name : specialNames) {
+                TownData specialTown;
+                specialTown.name        = name;
+                specialTown.mayorXuid   = "200000001";
+                specialTown.x           = 1000;
+                specialTown.z           = 1000;
+                specialTown.x_end       = 1100;
+                specialTown.z_end       = 1100;
+                specialTown.d           = 0;
+                specialTown.perm        = 0;
+                specialTown.description = "特殊字符城镇测试";
+                specialTown.id          = dataService->getMaxId<TownData>() + 1;
+
+                PlayerInfo operatorInfo("100000001", "腐竹", true);
+
+                // 验证特殊字符名称可以创建
+                REQUIRE_NOTHROW(dataService->createItem<TownData>(specialTown, operatorInfo));
+
+                auto* createdTown = dataService->findTownAt(1050, 1050, 0);
+                REQUIRE(createdTown != nullptr);
+                REQUIRE(createdTown->getTownName() == name);
+
+                // 验证通过名称查找
+                auto* foundByName = dataService->findTownByName(name);
+                REQUIRE(foundByName != nullptr);
+                REQUIRE(foundByName->getTownName() == name);
+
+                // 清理以便下次测试
+                dataService->deleteItem<TownData>(specialTown.x, specialTown.z, specialTown.d);
+            }
+        }
+
+        SECTION("Zero Size Realm with Members") {
+            // 测试零大小领地添加成员
+            LandData zeroSizeLand;
+            zeroSizeLand.ownerXuid = "200000003";
+            zeroSizeLand.x         = 2000;
+            zeroSizeLand.z         = 2000;
+            zeroSizeLand.x_end     = 2000; // 零宽度
+            zeroSizeLand.z_end     = 2000; // 零高度
+            zeroSizeLand.d         = 0;
+            zeroSizeLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            PlayerInfo playerInfo("200000003", "张三", false);
+            dataService->createItem<LandData>(zeroSizeLand, playerInfo);
+
+            auto* createdLand = dataService->findLandAt(2000, 2000, 0);
+            REQUIRE(createdLand != nullptr);
+            REQUIRE(createdLand->getArea() == 0);
+
+            // 测试零大小领地添加成员
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+            dataService
+                ->addItemMember<LandData>(center.first, center.second, createdLand->getDimension(), playerInfo, "小红");
+
+            auto* landWithMember = dataService->findLandAt(2000, 2000, 0);
+            REQUIRE(landWithMember != nullptr);
+            REQUIRE_FALSE(landWithMember->getMemberXuids().empty());
+            REQUIRE(landWithMember->hasBasicPermission("200000002"));
+        }
+
+        SECTION("Line Realm with Complex Operations") {
+            // 测试线性领地（宽度或高度为0）的复杂操作
+            LandData lineLand;
+            lineLand.ownerXuid = "200000004";
+            lineLand.x         = 3000;
+            lineLand.z         = 3000;
+            lineLand.x_end     = 3500; // 宽度为500
+            lineLand.z_end     = 3000; // 高度为0
+            lineLand.d         = 0;
+            lineLand.perm      = 8;
+            lineLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            PlayerInfo playerInfo("200000004", "李四", false);
+            dataService->createItem<LandData>(lineLand, playerInfo);
+
+            auto* createdLand = dataService->findLandAt(3250, 3000, 0);
+            REQUIRE(createdLand != nullptr);
+            REQUIRE(createdLand->getArea() == 0);
+
+            // 测试线性领地的权限修改
+            dataService->modifyItemPermission<LandData>(
+                createdLand->getX(),
+                createdLand->getZ(),
+                createdLand->getDimension(),
+                16,
+                playerInfo
+            );
+            REQUIRE(createdLand->getPermission() == 16);
+
+            // 测试线性领地的成员管理
+            auto center = TestEnvironment::getInstance().getItemCenter<LandData>(createdLand);
+            dataService
+                ->addItemMember<LandData>(center.first, center.second, createdLand->getDimension(), playerInfo, "王五");
+
+            auto* landWithMember = dataService->findLandAt(3250, 3000, 0);
+            REQUIRE(landWithMember != nullptr);
+            REQUIRE(landWithMember->hasBasicPermission("200000005"));
+
+            // 测试线性领地的边界查询
+            auto* onLineLand = dataService->findLandAt(3100, 3000, 0);
+            REQUIRE(onLineLand != nullptr);
+
+            auto* offLineLand = dataService->findLandAt(3250, 3001, 0);
+            REQUIRE(offLineLand == nullptr);
+        }
+
+        SECTION("Maximum Permission Value Edge Cases") {
+            // 测试最大权限值的边界情况
+            LandData maxPermLand;
+            maxPermLand.ownerXuid = "200000005";
+            maxPermLand.x         = 4000;
+            maxPermLand.z         = 4000;
+            maxPermLand.x_end     = 4100;
+            maxPermLand.z_end     = 4100;
+            maxPermLand.d         = 0;
+            maxPermLand.perm      = INT_MAX;
+            maxPermLand.id        = dataService->getMaxId<LandData>() + 1;
+
+            PlayerInfo playerInfo("200000005", "王五", false);
+            dataService->createItem<LandData>(maxPermLand, playerInfo);
+
+            auto* createdLand = dataService->findLandAt(4050, 4050, 0);
+            REQUIRE(createdLand != nullptr);
+            REQUIRE(createdLand->getPermission() == INT_MAX);
+
+            // 测试权限位操作
+            SECTION("Permission Bit Operations") {
+                // 测试权限位的设置和检查
+                int testPerm = 0;
+
+                // 设置各个权限位
+                for (int i = 0; i < 16; i++) {
+                    testPerm |= (1 << i);
+                    dataService->modifyItemPermission<LandData>(
+                        createdLand->getX(),
+                        createdLand->getZ(),
+                        createdLand->getDimension(),
+                        testPerm,
+                        playerInfo
+                    );
+                    REQUIRE(createdLand->getPermission() == testPerm);
+                }
+
+                // 测试权限位清除
+                dataService->modifyItemPermission<LandData>(
+                    createdLand->getX(),
+                    createdLand->getZ(),
+                    createdLand->getDimension(),
+                    0,
+                    playerInfo
+                );
+                REQUIRE(createdLand->getPermission() == 0);
             }
         }
     }

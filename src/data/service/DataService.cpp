@@ -419,8 +419,8 @@ void DataService::validateCoordinatesRange(const T& data) {
     }
 
     // 2. 检查是否超出LAND_RANGE范围
-    if (data.x >= LAND_RANGE || data.x <= -LAND_RANGE || data.x_end >= LAND_RANGE || data.x_end <= -LAND_RANGE
-        || data.z >= LAND_RANGE || data.z <= -LAND_RANGE || data.z_end >= LAND_RANGE || data.z_end <= -LAND_RANGE) {
+    if (data.x > LAND_RANGE || data.x < -LAND_RANGE || data.x_end > LAND_RANGE || data.x_end < -LAND_RANGE
+        || data.z > LAND_RANGE || data.z < -LAND_RANGE || data.z_end > LAND_RANGE || data.z_end < -LAND_RANGE) {
         throw RealmOutOfRangeException(std::format("{}坐标超出范围，坐标范围不能超过 +/-{}", typeName, LAND_RANGE));
     }
 

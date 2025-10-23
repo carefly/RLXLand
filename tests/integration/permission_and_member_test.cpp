@@ -734,6 +734,165 @@ TEST_CASE("Permission and Member Management Tests", "[permission][member]") {
             REQUIRE_FALSE(createdLand1->hasBasicPermission("200000002"));
             REQUIRE(createdLand2->hasBasicPermission("200000002"));
         }
+
+        SECTION("Complex Permission Combination Tests") {
+            // 创建一个城镇用于复杂权限测试
+            TownData complexTown;
+            complexTown.name        = "复杂权限测试城镇";
+            complexTown.mayorXuid   = "200000001";
+            complexTown.x           = 100;
+            complexTown.z           = 100;
+            complexTown.x_end       = 400;
+            complexTown.z_end       = 400;
+            complexTown.d           = 0;
+            complexTown.perm        = 8; // BUILD权限
+            complexTown.description = "用于复杂权限测试的城镇";
+            complexTown.id          = dataService->getMaxId<TownData>() + 1;
+
+            PlayerInfo operatorInfo("100000001", "腐竹", true);
+            dataService->createItem<TownData>(complexTown, operatorInfo);
+
+            // 添加城镇成员
+            auto* town = dataService->findTownAt(200, 200, 0);
+            REQUIRE(town != nullptr);
+            auto center = TestEnvironment::getInstance().getItemCenter<TownData>(town);
+            dataService
+                ->addItemMember<TownData>(center.first, center.second, town->getDimension(), operatorInfo, "小红");
+            dataService
+                ->addItemMember<TownData>(center.first, center.second, town->getDimension(), operatorInfo, "张三");
+
+            SECTION("Town Permission Override Test") {
+                // 在城镇内创建领地，测试权限覆盖
+                LandData landInTown;
+                landInTown.ownerXuid = "200000002"; // 小红
+                landInTown.x         = 150;
+                landInTown.z         = 150;
+                landInTown.x_end     = 250;
+                landInTown.z_end     = 250;
+                landInTown.d         = 0;
+                landInTown.perm      = 1; // ATK权限（与城镇不同）
+                landInTown.id        = dataService->getMaxId<LandData>() + 1;
+
+                PlayerInfo memberInfo("200000002", "小红", false);
+                dataService->createItem<LandData>(landInTown, memberInfo);
+
+                auto* land = dataService->findLandAt(200, 200, 0);
+                REQUIRE(land != nullptr);
+
+                // 验证权限独立性
+                REQUIRE(land->getPermission() == 1); // Land权限
+                REQUIRE(town->getPermission() == 8); // Town权限
+
+                // 测试权限组合：城镇成员但不是领地成员
+                REQUIRE_FALSE(land->isOwner("200000003"));            // 张三不是领地所有者
+                REQUIRE_FALSE(land->hasBasicPermission("200000003")); // 张三没有领地权限
+
+                // 测试权限组合：既是城镇成员又是领地成员
+                auto centerLand = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+                dataService->addItemMember<LandData>(
+                    centerLand.first,
+                    centerLand.second,
+                    land->getDimension(),
+                    memberInfo,
+                    "张三"
+                );
+
+                auto* updatedLand = dataService->findLandAt(200, 200, 0);
+                REQUIRE(updatedLand->hasBasicPermission("200000003")); // 张三现在有领地权限
+            }
+
+            SECTION("Multiple Permission Levels Test") {
+                // 创建多个领地测试多级权限
+                LandData land1;
+                land1.ownerXuid = "200000002"; // 小红
+                land1.x         = 120;
+                land1.z         = 120;
+                land1.x_end     = 180;
+                land1.z_end     = 180;
+                land1.d         = 0;
+                land1.perm      = 1 | 2; // ATK + USE_ON权限
+                land1.id        = dataService->getMaxId<LandData>() + 1;
+
+                PlayerInfo memberInfo("200000002", "小红", false);
+                dataService->createItem<LandData>(land1, memberInfo);
+
+                LandData land2;
+                land2.ownerXuid = "200000003"; // 张三
+                land2.x         = 220;
+                land2.z         = 220;
+                land2.x_end     = 280;
+                land2.z_end     = 280;
+                land2.d         = 0;
+                land2.perm      = 4 | 8; // VILLAGER_ATK + BUILD权限
+                land2.id        = dataService->getMaxId<LandData>() + 1;
+
+                PlayerInfo memberInfo2("200000003", "张三", false);
+                dataService->createItem<LandData>(land2, memberInfo2);
+
+                auto* createdLand1 = dataService->findLandAt(150, 150, 0);
+                auto* createdLand2 = dataService->findLandAt(250, 250, 0);
+                REQUIRE(createdLand1 != nullptr);
+                REQUIRE(createdLand2 != nullptr);
+
+                // 验证不同权限组合
+                REQUIRE(createdLand1->getPermission() == 3);  // 1 | 2 = 3
+                REQUIRE(createdLand2->getPermission() == 12); // 4 | 8 = 12
+
+                // 测试权限修改不影响其他领地
+                dataService->modifyItemPermission<LandData>(
+                    createdLand1->getX(),
+                    createdLand1->getZ(),
+                    createdLand1->getDimension(),
+                    16, // POPITEM权限
+                    memberInfo
+                );
+                REQUIRE(createdLand1->getPermission() == 16);
+                REQUIRE(createdLand2->getPermission() == 12); // 不受影响
+            }
+
+            SECTION("Permission Inheritance Edge Cases") {
+                // 测试权限继承的边界情况
+                LandData edgeCaseLand;
+                edgeCaseLand.ownerXuid = "200000002"; // 小红
+                edgeCaseLand.x         = 320;
+                edgeCaseLand.z         = 320;
+                edgeCaseLand.x_end     = 380;
+                edgeCaseLand.z_end     = 380;
+                edgeCaseLand.d         = 0;
+                edgeCaseLand.perm      = 0; // 无权限
+                edgeCaseLand.id        = dataService->getMaxId<LandData>() + 1;
+
+                PlayerInfo memberInfo("200000002", "小红", false);
+                dataService->createItem<LandData>(edgeCaseLand, memberInfo);
+
+                auto* land = dataService->findLandAt(350, 350, 0);
+                REQUIRE(land != nullptr);
+                REQUIRE(land->getPermission() == 0);
+
+                // 测试零权限领地的成员管理
+                auto centerLand = TestEnvironment::getInstance().getItemCenter<LandData>(land);
+                dataService->addItemMember<LandData>(
+                    centerLand.first,
+                    centerLand.second,
+                    land->getDimension(),
+                    memberInfo,
+                    "张三"
+                );
+
+                auto* updatedLand = dataService->findLandAt(350, 350, 0);
+                REQUIRE(updatedLand->hasBasicPermission("200000003")); // 成员有基础权限
+
+                // 测试最大权限值
+                dataService->modifyItemPermission<LandData>(
+                    updatedLand->getX(),
+                    updatedLand->getZ(),
+                    updatedLand->getDimension(),
+                    0xFFFF, // 最大权限值
+                    memberInfo
+                );
+                REQUIRE(updatedLand->getPermission() == 0xFFFF);
+            }
+        }
     }
 }
 

@@ -172,8 +172,10 @@ InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
     // 添加维度边界检查
     if (d < 0 || d >= 3) return nullptr;
 
-    int bigx = (int)((coordx + 100000 * 10) / 100000);
-    int bigz = (int)((coordz + 100000 * 10) / 100000);
+    // 减1是为了确保 LAND_RANGE = 1000000 边界值能正确映射到索引19而不是越界到20
+    // 这样修改后，坐标范围 [-1000000, 1000000] 都能正确映射到 [0, 19] 的数组索引
+    int bigx = (int)((coordx + 100000 * 10 - 1) / 100000);
+    int bigz = (int)((coordz + 100000 * 10 - 1) / 100000);
 
     LONG64 x = std::abs(coordx) - std::abs(coordx / 100000 * 100000);
     LONG64 z = std::abs(coordz) - std::abs(coordz / 100000 * 100000);
@@ -209,8 +211,10 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
     // 添加维度边界检查
     if (d < 0 || d >= 3) return;
 
-    int bigx = (int)((xi + 100000 * 10) / 100000);
-    int bigz = (int)((zi + 100000 * 10) / 100000);
+    // 减1是为了确保 LAND_RANGE = 1000000 边界值能正确映射到索引19而不是越界到20
+    // 这样修改后，坐标范围 [-1000000, 1000000] 都能正确映射到 [0, 19] 的数组索引
+    int bigx = (int)((xi + 100000 * 10 - 1) / 100000);
+    int bigz = (int)((zi + 100000 * 10 - 1) / 100000);
 
     LONG64 x = std::abs(xi) - std::abs(xi / 100000 * 100000);
     LONG64 z = std::abs(zi) - std::abs(zi / 100000 * 100000);
