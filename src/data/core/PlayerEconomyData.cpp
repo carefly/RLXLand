@@ -1,5 +1,6 @@
 #include "PlayerEconomyData.h"
 #include "data/economy/EconomyDataManager.h"
+#include "service/EconomyConfig.h"
 #include <vector>
 
 namespace rlx_land {
@@ -44,18 +45,28 @@ void PlayerEconomyData::save() {
 }
 
 PlayerEconomyData::EconomyData& PlayerEconomyData::getPlayerEconomy(const std::string& xuid) {
-    // 如果玩家不存在，会自动创建一个默认的EconomyData
-    return playerEconomyMap[xuid];
+    // 如果玩家不存在，会自动创建一个默认的EconomyData，并给予初始金钱
+    auto it = playerEconomyMap.find(xuid);
+    if (it == playerEconomyMap.end()) {
+        // 新玩家，给予默认金钱
+        playerEconomyMap[xuid].money = EconomyConfig::PLAYER_INITIAL_MONEY;
+        isDataModified = true;
+        save();
+        return playerEconomyMap[xuid];
+    }
+    return it->second;
 }
 
 void PlayerEconomyData::setPlayerMoney(const std::string& xuid, int64_t amount) {
     playerEconomyMap[xuid].money = amount;
     isDataModified               = true;
+    save();
 }
 
 void PlayerEconomyData::addPlayerMoney(const std::string& xuid, int64_t amount) {
     playerEconomyMap[xuid].money += amount;
     isDataModified                = true;
+    save();
 }
 
 bool PlayerEconomyData::deductPlayerMoney(const std::string& xuid, int64_t amount) {
@@ -63,11 +74,22 @@ bool PlayerEconomyData::deductPlayerMoney(const std::string& xuid, int64_t amoun
     if (playerEconomyMap[xuid].money >= amount) {
         playerEconomyMap[xuid].money -= amount;
         isDataModified                = true;
+        save();
         return true;
     }
     return false; // 余额不足
 }
 
-int64_t PlayerEconomyData::getPlayerMoney(const std::string& xuid) { return playerEconomyMap[xuid].money; }
+int64_t PlayerEconomyData::getPlayerMoney(const std::string& xuid) {
+    auto it = playerEconomyMap.find(xuid);
+    if (it == playerEconomyMap.end()) {
+        // 新玩家，给予默认金钱
+        playerEconomyMap[xuid].money = EconomyConfig::PLAYER_INITIAL_MONEY;
+        isDataModified = true;
+        save();
+        return playerEconomyMap[xuid].money;
+    }
+    return it->second.money;
+}
 
 } // namespace rlx_land

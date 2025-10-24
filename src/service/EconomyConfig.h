@@ -9,7 +9,7 @@ public:
     static const int LAND_PRICE_PER_BLOCK = 1;
     
     // 玩家初始金钱
-    static const int PLAYER_INITIAL_MONEY = 1000;
+    static const int PLAYER_INITIAL_MONEY = 100000;
     
     // 其他经济相关配置可以在这里添加
 };
