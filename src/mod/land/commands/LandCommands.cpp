@@ -145,7 +145,7 @@ void LandCommands::registerCommands() {
                 auto [x, x_end] = std::minmax(ita->second.first, itb->second.first);
                 auto [z, z_end] = std::minmax(ita->second.second, itb->second.second);
                 int     area    = (x_end - x) * (z_end - z);
-                int64_t pay     = EconomyService::getLandPurchaseCost(area); // 使用经济服务计算费用
+                int pay     = EconomyService::getLandPurchaseCost(area); // 使用经济服务计算费用
 
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
@@ -197,7 +197,7 @@ void LandCommands::registerCommands() {
                     output.error("该位置不是你的领地");
                     return;
                 }
-                int64_t pay = EconomyService::getLandPurchaseCost(li->getArea()); // 使用经济服务计算费用
+                int pay = EconomyService::getLandPurchaseCost(li->getArea()); // 使用经济服务计算费用
                 // 增加玩家金钱
                 EconomyService::addIncome(li->getOwnerXuid(), pay);
                 // 使用新的坐标参数删除领地

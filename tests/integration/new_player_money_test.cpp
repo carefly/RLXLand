@@ -5,35 +5,36 @@
 
 namespace rlx_land::test {
 
+// 新玩家默认金钱测试（在本地模式下运行，因为测试环境中没有 RLXMoney DLL）
 TEST_CASE("New Player Default Money Test", "[economy]") {
-    // 初始化经济数据
+    // 初始化经济数据（在测试环境中会使用本地模式）
     PlayerEconomyData::initialize();
-    
+
     SECTION("New player should get default money") {
         const std::string newXuid = "new_player_xuid";
-        
+
         // 检查新玩家是否获得默认金钱
         int64_t money = PlayerEconomyData::getPlayerMoney(newXuid);
         REQUIRE(money == EconomyConfig::PLAYER_INITIAL_MONEY);
         REQUIRE(money == 100000); // 确保是100000而不是其他值
     }
-    
+
     SECTION("Existing player should keep their money") {
-        const std::string existingXuid = "existing_player_xuid";
-        const int64_t existingAmount = 50000;
-        
+        const std::string existingXuid   = "existing_player_xuid";
+        const int64_t     existingAmount = 50000;
+
         // 设置现有玩家的金钱
         PlayerEconomyData::setPlayerMoney(existingXuid, existingAmount);
-        
+
         // 检查现有玩家的金钱是否保持不变
         int64_t money = PlayerEconomyData::getPlayerMoney(existingXuid);
         REQUIRE(money == existingAmount);
         REQUIRE(money != EconomyConfig::PLAYER_INITIAL_MONEY);
     }
-    
+
     SECTION("New player through getPlayerEconomy should get default money") {
         const std::string newXuid = "new_player_xuid_2";
-        
+
         // 通过getPlayerEconomy检查新玩家是否获得默认金钱
         auto& economyData = PlayerEconomyData::getPlayerEconomy(newXuid);
         REQUIRE(economyData.money == EconomyConfig::PLAYER_INITIAL_MONEY);

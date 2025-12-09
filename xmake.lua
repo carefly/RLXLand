@@ -1,18 +1,18 @@
 add_rules("mode.debug", "mode.release")
 
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
+-- 本地私有包仓库，提供 rlxmoney
+-- add_repositories("local-packages packages")
 
--- add_requires("levilamina x.x.x") for a specific version
--- add_requires("levilamina develop") to use develop version
--- please note that you should add bdslibrary yourself if using dev version
 if is_config("target_type", "server") then
-    add_requires("levilamina 1.5.1", {configs = {target_type = "server"}})
+    add_requires("levilamina 1.7.0", {configs = {target_type = "server"}})
 else
-    add_requires("levilamina 1.5.1", {configs = {target_type = "client"}})
+    add_requires("levilamina 1.7.0", {configs = {target_type = "client"}})
 end
 
 add_requires("levibuildscript")
 add_requires("nlohmann_json")
+-- RLXMoney 仅使用本地 release 库（plugins/RLXMoney/ 下的 DLL/Lib）
 
 if not has_config("vs_runtime") then
     set_runtimes("MD")
@@ -50,6 +50,24 @@ target("RLXLand") -- Change this to your mod name.
     add_headerfiles("src/**.h")
     add_files("src/**.cpp")
     add_includedirs("src")
+
+    -- RLXMoney 依赖：仅使用 plugins/RLXMoney 下的 release 库
+    local rlxmoney_dir = path.join(os.projectdir(), "plugins", "RLXMoney")
+    local rlxmoney_lib = path.join(rlxmoney_dir, "RLXMoney.lib")
+    local rlxmoney_dll = path.join(rlxmoney_dir, "RLXMoney.dll")
+    -- 必须存在 release 库，否则直接报错（防止链接阶段才发现）
+    if not os.exists(rlxmoney_lib) then
+        raise("RLXMoney.lib not found at %s. 请放置 release 版 RLXMoney.lib/.dll 后再构建。", rlxmoney_lib)
+    end
+    add_linkdirs(rlxmoney_dir)
+    add_links("RLXMoney")
+    add_defines("RLX_MONEY_ENABLED")
+    -- 打包时拷贝 DLL，方便运行环境直接使用
+    if os.exists(rlxmoney_dll) then
+        add_installfiles(rlxmoney_dll, {prefixdir = "plugins/RLXMoney"})
+    else
+        print("warning: RLXMoney.dll not found, link succeeded but runtime may fail")
+    end
     -- if is_config("target_type", "server") then
     --     add_includedirs("src-server")
     --     add_files("src-server/**.cpp")

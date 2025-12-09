@@ -1,21 +1,17 @@
 #include "EconomyDataManager.h"
-#include "common/PathConfig.h"
 #include "common/Utf8Utils.h"
 #include "mod/RLXLand.h"
+#include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include <filesystem>
+
 
 
 namespace rlx_land {
 
-std::string EconomyDataManager::getEconomyDataDir() {
-    return PathConfig::ECONOMY_BASE_DIR;
-}
+std::string EconomyDataManager::getEconomyDataDir() { return "../RLXModeResources/data/economy"; }
 
-std::string EconomyDataManager::getEconomyDataFile() {
-    return PathConfig::ECONOMY_JSON_FILE;
-}
+std::string EconomyDataManager::getEconomyDataFile() { return "../RLXModeResources/data/economy/economy.json"; }
 
 void EconomyDataManager::ensureDirectoryExists(const std::string& dirPath) {
     try {
@@ -32,23 +28,23 @@ void EconomyDataManager::ensureDirectoryExists(const std::string& dirPath) {
 
 std::vector<EconomyData> EconomyDataManager::loadFromFile() {
     std::vector<EconomyData> economyData;
-    std::string dataPath = getEconomyDataFile();
-    
+    std::string              dataPath = getEconomyDataFile();
+
     // 确保目录存在
     std::string dirPath = getEconomyDataDir();
     ensureDirectoryExists(dirPath);
-    
+
     std::ifstream file = Utf8Utils::createUtf8InputStream(dataPath);
     if (!file.is_open()) {
         // 文件不存在，返回空数据
         return economyData;
     }
-    
+
     try {
         nlohmann::json json;
         file >> json;
         file.close();
-        
+
         if (json.is_array()) {
             for (const auto& item : json) {
                 EconomyData data = EconomyData::fromJson(item);
@@ -61,35 +57,32 @@ std::vector<EconomyData> EconomyDataManager::loadFromFile() {
             dataPath,
             e.what()
         );
-        
+
         // 返回已成功加载的数据
         return economyData;
     }
-    
+
     return economyData;
 }
 
 void EconomyDataManager::saveToFile(const std::vector<EconomyData>& data) {
     std::string dataPath = getEconomyDataFile();
-    
+
     // 确保目录存在
     std::string dirPath = getEconomyDataDir();
     ensureDirectoryExists(dirPath);
-    
+
     nlohmann::json json;
     for (const auto& item : data) {
         json.push_back(item.toJson());
     }
-    
+
     std::ofstream file = Utf8Utils::createUtf8OutputStream(dataPath);
     if (file.is_open()) {
         file << json.dump(4);
         file.close();
     } else {
-        rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
-            "Failed to save economy data to {}",
-            dataPath
-        );
+        rlx_land::RLXLand::getInstance().getSelf().getLogger().error("Failed to save economy data to {}", dataPath);
     }
 }
 
