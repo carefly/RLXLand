@@ -18,20 +18,20 @@ public:
 
     // 支持格式化参数的版本
     template <typename... Args>
-    void error(const std::string& format, Args... args) {
-        (void)(sizeof...(args)); // 避免未使用参数警告
+    void error(const std::string& format, Args&&... args) {
+        ((void)args, ...); // 消除未使用参数警告
         std::cerr << "[ERROR] " << format << std::endl;
     }
 
     template <typename... Args>
-    void info(const std::string& format, Args... args) {
-        (void)(sizeof...(args)); // 避免未使用参数警告
+    void info(const std::string& format, Args&&... args) {
+        ((void)args, ...); // 消除未使用参数警告
         std::cout << "[INFO] " << format << std::endl;
     }
 
     template <typename... Args>
-    void debug(const std::string& format, Args... args) {
-        (void)(sizeof...(args)); // 避免未使用参数警告
+    void debug(const std::string& format, Args&&... args) {
+        ((void)args, ...); // 消除未使用参数警告
         std::cout << "[DEBUG] " << format << std::endl;
     }
 };
