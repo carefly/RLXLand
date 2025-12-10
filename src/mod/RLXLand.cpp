@@ -5,6 +5,7 @@
 #include "mod/events/CommonEventHandlers.h"
 #include "mod/land/commands/LandCommands.h"
 #include "mod/town/commands/TownCommands.h"
+#include <ll/api/mod/RegisterHelper.h>
 
 
 namespace rlx_land {
@@ -16,6 +17,8 @@ RLXLand& RLXLand::getInstance() {
 
 bool RLXLand::load() {
     // 加载配置文件
+    getSelf().getLogger().info("RLXLand 模组开始加载");
+
     ModConfig::load();
 
     // 检查 money DLL
@@ -24,21 +27,20 @@ bool RLXLand::load() {
 
     if (!dllExists) {
         if (requirePlugin) {
-            getSelf().getLogger().error("RLXMoney plugin is required but not found. Please install RLXMoney plugin.");
+            getSelf().getLogger().error("必须安装 RLXMoney 插件但未找到，请安装 RLXMoney 插件。");
             return false;
         } else {
-            getSelf().getLogger().warn("RLXMoney plugin not found. Running in local mode (money data will not persist)."
-            );
+            getSelf().getLogger().warn("未找到 RLXMoney 插件，将以本地模式运行（金币数据不会持久化）。");
         }
     } else {
-        getSelf().getLogger().info("RLXMoney plugin found and will be used.");
+        getSelf().getLogger().info("已找到 RLXMoney 插件，将正常使用。");
     }
 
     // 初始化玩家经济数据（会根据 DLL 可用性自动选择模式）
     try {
         PlayerEconomyData::initialize();
     } catch (const std::exception& e) {
-        getSelf().getLogger().error("Failed to initialize PlayerEconomyData: {}", e.what());
+        getSelf().getLogger().error("初始化 PlayerEconomyData 失败：{}", e.what());
         if (requirePlugin) {
             return false;
         }
@@ -51,6 +53,8 @@ bool RLXLand::load() {
     // 注册命令
     LandCommands::registerCommands();
     TownCommands::registerCommands();
+    getSelf().getLogger().info("RLXLand 模组命令已注册");
+
 
     // 注册事件处理器
     CommonEventHandlers::registerEventListeners();
@@ -61,7 +65,7 @@ bool RLXLand::load() {
 
 bool RLXLand::enable() {
     // 启用模组时的日志输出
-    getSelf().getLogger().info("RLXLand mod enabled");
+    getSelf().getLogger().info("RLXLand 模组已启用");
     return true;
 }
 
@@ -70,8 +74,10 @@ bool RLXLand::disable() {
     PlayerEconomyData::save();
 
     // 禁用模组时的日志输出
-    getSelf().getLogger().info("RLXLand mod disabled");
+    getSelf().getLogger().info("RLXLand 模组已禁用");
     return true;
 }
 
 } // namespace rlx_land
+
+LL_REGISTER_MOD(rlx_land::RLXLand, rlx_land::RLXLand::getInstance());
