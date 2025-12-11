@@ -55,6 +55,15 @@ void RLXStatus::oneTick() {
             tps_value = "§c" + std::to_string((int)tps);
         }
 
+        // 计算在线人数
+        int onlineCount = 0;
+        level->forEachPlayer([&]([[maybe_unused]] Player& player) {
+            onlineCount++;
+            return true;
+        });
+
+        std::string online_value = "§a" + std::to_string(onlineCount);
+
         level->forEachPlayer([&](Player& player) {
             auto pos = player.getPosition();
 
@@ -78,8 +87,9 @@ void RLXStatus::oneTick() {
 
             auto data = std::vector<std::pair<std::string, int>>{
                 {std::format("§rTPS {}", tps_value), 0},
-                {land_value, 1},
-                {town_value, 2},
+                {std::format("§r在线人数 {}", online_value), 1},
+                {land_value, 2},
+                {town_value, 3},
             };
 
             RLXScoreboard::setClientSidebar("RLX", data, &player);
