@@ -66,7 +66,11 @@ TownData::TownData(
     this->memberXuids = {};
 }
 
-TownInformation::TownInformation(TownData td) : BaseInformation(static_cast<BaseData&>(td)), townData(std::move(td)) {
+TownInformation::TownInformation(TownData td) 
+    : BaseInformation(static_cast<BaseData&>(td)), 
+      townData(std::move(td)) {
+    // 更新 dataRef 指向 townData 中的 BaseData 部分
+    updateDataRef(static_cast<BaseData&>(townData));
     setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(townData.mayorXuid));
 }
 

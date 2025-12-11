@@ -49,7 +49,11 @@ LandData::LandData(int x, int z, int x_end, int z_end, const std::string& ownerX
     this->memberXuids = {};
 }
 
-LandInformation::LandInformation(LandData ld) : BaseInformation(static_cast<BaseData&>(ld)), landData(std::move(ld)) {
+LandInformation::LandInformation(LandData ld) 
+    : BaseInformation(static_cast<BaseData&>(ld)), 
+      landData(std::move(ld)) {
+    // 更新 dataRef 指向 landData 中的 BaseData 部分
+    updateDataRef(static_cast<BaseData&>(landData));
     setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(landData.ownerXuid));
 }
 
