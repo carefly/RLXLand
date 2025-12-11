@@ -108,10 +108,10 @@ unordered_map<string, pair<int, int>> landBuyB;
 
 void LandCommands::registerCommands() {
     using ll::command::CommandRegistrar;
-    auto& landCommad = CommandRegistrar::getInstance().getOrCreateCommand("land", "领地");
-    landCommad.overload<LandBasicCommad>()
+    auto& landCommand = CommandRegistrar::getInstance().getOrCreateCommand("land", "领地");
+    landCommand.overload<LandBasicCommand>()
         .required("Operation")
-        .execute([](CommandOrigin const& origin, CommandOutput& output, LandBasicCommad const& param, Command const&) {
+        .execute([](CommandOrigin const& origin, CommandOutput& output, LandBasicCommand const& param, Command const&) {
             auto* entity = origin.getEntity();
             if (entity == nullptr || !entity->isType(ActorType::Player)) {
                 output.error("Only players can do");
@@ -189,11 +189,32 @@ void LandCommands::registerCommands() {
                     EconomyService::addIncome(xuid, pay);
                     output.error(format("创建领地时发生错误: {}", e.what()));
                 }
-            } else if (LandCommandBasicOperation::sell == operation) {
+            }
+        });
+    landCommand.overload<LandSellCommand>()
+        .required("Operation")
+        .execute([](CommandOrigin const& origin, CommandOutput& output, LandSellCommand const& param, Command const&) {
+            auto* entity = origin.getEntity();
+            if (entity == nullptr || !entity->isType(ActorType::Player)) {
+                output.error("Only players can do");
+                return;
+            }
+            auto* sp        = static_cast<Player*>(entity);
+            auto  xuid      = sp->getXuid();
+            auto  operation = param.Operation;
+
+            if (LandCommandSellOperation::sell == operation) {
                 auto pos = sp->getPosition();
                 auto li  = DataService::getInstance()->findLandAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
-                if ((nullptr == li || !li->isOwner(xuid)) && !PermissionService::getInstance().isOperator(sp)) {
+                // 首先检查是否存在领地
+                if (nullptr == li) {
+                    output.error("该位置没有领地");
+                    return;
+                }
+
+                // 然后检查权限：如果不是所有者且不是操作员，则拒绝
+                if (!li->isOwner(xuid) && !PermissionService::getInstance().isOperator(sp)) {
                     output.error("该位置不是你的领地");
                     return;
                 }
@@ -203,7 +224,20 @@ void LandCommands::registerCommands() {
                 // 使用新的坐标参数删除领地
                 DataService::getInstance()->deleteItem<LandData>((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
                 output.success(format("领地卖出成功，共获得 {} 元", pay));
-            } else if (LandCommandBasicOperation::query == operation) {
+            }
+        });
+    landCommand.overload<LandQueryCommand>()
+        .required("Operation")
+        .execute([](CommandOrigin const& origin, CommandOutput& output, LandQueryCommand const& param, Command const&) {
+            auto* entity = origin.getEntity();
+            if (entity == nullptr || !entity->isType(ActorType::Player)) {
+                output.error("Only players can do");
+                return;
+            }
+            auto* sp        = static_cast<Player*>(entity);
+            auto  operation = param.Operation;
+
+            if (LandCommandQueryOperation::query == operation) {
                 auto pos  = sp->getPosition();
                 auto li   = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, sp->getDimensionId());
                 auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
@@ -240,7 +274,7 @@ void LandCommands::registerCommands() {
                 output.success(info);
             }
         });
-    landCommad.overload<LandTrustCommand>()
+    landCommand.overload<LandTrustCommand>()
         .required("Operation")
         .required("Name")
         .execute([](CommandOrigin const& origin, CommandOutput& output, LandTrustCommand const& param, Command const&) {
@@ -270,6 +304,8 @@ void LandCommands::registerCommands() {
 
                     output.success(format("成功添加玩家 {} 为领地成员", playerName));
 
+                } catch (const RealmNotFoundException& e) {
+                    output.error(e.what());
                 } catch (const RealmPermissionException& e) {
                     output.error(e.what());
                 } catch (const PlayerNotFoundException& e) {
@@ -294,6 +330,8 @@ void LandCommands::registerCommands() {
 
                     output.success(format("成功删除领地成员 {}", playerName));
 
+                } catch (const RealmNotFoundException& e) {
+                    output.error(e.what());
                 } catch (const RealmPermissionException& e) {
                     output.error(e.what());
                 } catch (const PlayerNotFoundException& e) {
@@ -304,7 +342,7 @@ void LandCommands::registerCommands() {
             }
         });
 
-    landCommad.overload<LandPermCommand>()
+    landCommand.overload<LandPermCommand>()
         .required("Operation")
         .required("Perm")
         .execute([](CommandOrigin const& origin, CommandOutput& output, LandPermCommand const& param, Command const&) {
@@ -332,6 +370,8 @@ void LandCommands::registerCommands() {
                     );
                     output.success(format("领地权限更改为 {}", perm_num));
 
+                } catch (const RealmNotFoundException& e) {
+                    output.error(e.what());
                 } catch (const RealmPermissionException& e) {
                     output.error(e.what());
                 } catch (const InvalidPermissionException& e) {

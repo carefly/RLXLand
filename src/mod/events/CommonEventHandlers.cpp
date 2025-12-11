@@ -78,7 +78,7 @@ void CommonEventHandlers::registerEventListeners() {
             auto dim = event.blockSource().getDimensionId();
             auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, (int)dim);
 
-            if (li != NULL && (li->getPermission() & 256)) { // PERM_FIRE = 256
+            if (li != nullptr && (li->getPermission() & 256)) { // PERM_FIRE = 256
                 event.setCancelled(false);
             } else {
                 event.setCancelled(true);
