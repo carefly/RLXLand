@@ -2,6 +2,7 @@
 #include "data/service/DataService.h"
 #include "mod/land/commands/LandCommands.h"
 #include "mod/land/permissions/LandPermissionChecker.h"
+#include "plugin/RLXStatus.h"
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
@@ -227,6 +228,11 @@ LL_TYPE_INSTANCE_HOOK(
     }
 }
 
+LL_TYPE_INSTANCE_HOOK(LevelTickHook, HookPriority::Normal, Level, &Level::$tick, void) {
+    RLXStatus::getInstance().oneTick();
+    origin();
+}
+
 void CommonEventHandlers::hookAllFunctions() {
     // Hook函数注册
     UseFrameHook2::hook();
@@ -235,6 +241,7 @@ void CommonEventHandlers::hookAllFunctions() {
     PlayerPullFishingHook::hook();
     ArmorStandSwapItemHook::hook();
     MobHurtEffectsHook::hook();
+    LevelTickHook::hook();
 }
 
 } // namespace rlx_land

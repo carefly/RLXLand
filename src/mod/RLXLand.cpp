@@ -5,6 +5,7 @@
 #include "mod/events/CommonEventHandlers.h"
 #include "mod/land/commands/LandCommands.h"
 #include "mod/town/commands/TownCommands.h"
+#include "plugin/RLXStatus.h"
 #include <ll/api/mod/RegisterHelper.h>
 
 
@@ -67,6 +68,11 @@ bool RLXLand::enable() const {
     // 注册事件处理器
     CommonEventHandlers::registerEventListeners();
     CommonEventHandlers::hookAllFunctions();
+    
+    // 启用状态显示（侧边栏）
+    RLXStatus::getInstance().load();
+    RLXStatus::getInstance().enable();
+    
     // 启用模组时的日志输出
     getSelf().getLogger().info("RLXLand 模组已启用");
     return true;
