@@ -51,3 +51,17 @@ class InvalidPermissionException : public std::runtime_error {
 public:
     explicit InvalidPermissionException(const std::string& message) : std::runtime_error(message) {}
 };
+
+namespace rlx_land {
+// 兼容性导入，便于在命名空间内直接使用异常类型
+using ::PlayerNotFoundException;
+using ::RealmNotFoundException;
+using ::DuplicateException;
+using ::NotMemberException;
+using ::RealmOutOfRangeException;
+using ::RealmPermissionException;
+using ::RealmConflictException;
+using ::InvalidCoordinatesException;
+using ::InvalidPlayerInfoException;
+using ::InvalidPermissionException;
+} // namespace rlx_land

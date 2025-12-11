@@ -6,7 +6,13 @@
 #include <algorithm>
 
 
-namespace rlx_land {
+namespace rlx_town {
+
+using rlx_land::BaseDataManager;
+using rlx_land::JsonLoader;
+using rlx_land::LeviLaminaAPI;
+using ::PlayerNotFoundException;
+using ::RealmNotFoundException;
 
 class TownDataManager : public BaseDataManager<TownData, TownInformation> {
 protected:
@@ -21,7 +27,7 @@ public:
         if (ti == nullptr) throw RealmNotFoundException("Town not found");
 
         std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-        if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
+        if (xuid.empty()) throw ::PlayerNotFoundException("Player not found: " + playerName);
 
         // 转让镇长职位
         std::string oldMayorXuid = ti->getMayorXuid();
@@ -51,4 +57,4 @@ public:
     }
 };
 
-} // namespace rlx_land
+} // namespace rlx_town

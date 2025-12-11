@@ -144,8 +144,8 @@ void LandCommands::registerCommands() {
                 int d           = sp->getDimensionId();
                 auto [x, x_end] = std::minmax(ita->second.first, itb->second.first);
                 auto [z, z_end] = std::minmax(ita->second.second, itb->second.second);
-                int     area    = (x_end - x) * (z_end - z);
-                int pay     = EconomyService::getLandPurchaseCost(area); // 使用经济服务计算费用
+                int area        = (x_end - x) * (z_end - z);
+                int pay         = EconomyService::getLandPurchaseCost(area); // 使用经济服务计算费用
 
                 landBuyState.erase(xuid);
                 landBuyA.erase(xuid);
@@ -318,7 +318,7 @@ void LandCommands::registerCommands() {
             auto  operation = param.Operation;
             auto  perm_num  = param.Perm;
 
-            if (LandCommandPermOperation::perm_operation == operation) {
+            if (LandCommandPermOperation::perm == operation) {
                 try {
                     auto pos           = sp->getPosition();
                     auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());

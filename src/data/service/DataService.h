@@ -61,12 +61,12 @@ public:
     typename DataLoaderTraits<T>::InfoType* findItemAt(LONG64 x, LONG64 z, int dimension);
 
     // 便捷的专用查询方法
-    LandInformation* findLandAt(LONG64 x, LONG64 z, int dimension);
-    TownInformation* findTownAt(LONG64 x, LONG64 z, int dimension);
+    LandInformation*        findLandAt(LONG64 x, LONG64 z, int dimension);
+    rlx_town::TownInformation* findTownAt(LONG64 x, LONG64 z, int dimension);
 
     // Town 特有的方法（无法统一的方法）
-    void             transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName);
-    TownInformation* findTownByName(const std::string& name);
+    void                      transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName);
+    rlx_town::TownInformation* findTownByName(const std::string& name);
 
 #ifdef TESTING
     // 测试专用方法 - 清理所有数据
@@ -74,8 +74,8 @@ public:
 #endif
 
 private:
-    std::unique_ptr<LandDataManager> landManager;
-    std::unique_ptr<TownDataManager> townManager;
+    std::unique_ptr<LandDataManager>       landManager;
+    std::unique_ptr<rlx_town::TownDataManager> townManager;
 
     DataService();
 
@@ -84,7 +84,7 @@ private:
     auto* getManager() {
         if constexpr (std::is_same_v<T, LandData>) {
             return landManager.get();
-        } else if constexpr (std::is_same_v<T, TownData>) {
+        } else if constexpr (std::is_same_v<T, rlx_town::TownData>) {
             return townManager.get();
         }
     }
@@ -133,7 +133,7 @@ private:
 
     // 验证方法（私有）
     void validateLandCreation(const LandData& data, const PlayerInfo& playerInfo);
-    void validateTownCreation(const TownData& data, const PlayerInfo& playerInfo);
+    void validateTownCreation(const rlx_town::TownData& data, const PlayerInfo& playerInfo);
     void validatePlayerInfo(const PlayerInfo& playerInfo);
 
     // 通用验证方法
@@ -146,7 +146,7 @@ private:
 
     // Town验证方法
     void validateOperatorPermission(const PlayerInfo& playerInfo);
-    void validateTownOverlap(const TownData& data);
+    void validateTownOverlap(const rlx_town::TownData& data);
     void validatePermission(int perm);
 };
 

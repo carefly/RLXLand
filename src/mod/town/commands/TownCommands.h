@@ -6,7 +6,7 @@
 #include <mc/server/commands/CommandOutput.h>
 #include <mc/server/commands/CommandRawText.h>
 
-namespace rlx_land {
+namespace rlx_town {
 
 enum TownCommandOperation : int {
     info = 1,
@@ -47,4 +47,4 @@ public:
     static void registerCommands();
 };
 
-} // namespace rlx_land
+} // namespace rlx_town

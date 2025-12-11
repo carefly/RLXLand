@@ -98,7 +98,7 @@ void BaseDataManager<T, U>::addMember(U* info, const std::string& playerName) {
     if (info == nullptr) throw RealmNotFoundException("Item not found");
 
     std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-    if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
+    if (xuid.empty()) throw ::PlayerNotFoundException("Player not found: " + playerName);
 
     // 检查玩家是否已经是成员
     const auto& members = info->getMemberXuids();
@@ -124,7 +124,7 @@ void BaseDataManager<T, U>::removeMember(U* info, const std::string& playerName)
     if (info == nullptr) throw RealmNotFoundException("Item not found");
 
     std::string xuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-    if (xuid.empty()) throw PlayerNotFoundException("Player not found: " + playerName);
+    if (xuid.empty()) throw ::PlayerNotFoundException("Player not found: " + playerName);
 
     // 查找并移除成员
     const auto& members = info->getMemberXuids();
@@ -169,6 +169,6 @@ void BaseDataManager<T, U>::clearAllItems() {
 
 // 显式实例化 - 需要根据实际使用的类型进行调整
 template class BaseDataManager<LandData, LandInformation>;
-template class BaseDataManager<TownData, TownInformation>;
+template class BaseDataManager<rlx_town::TownData, rlx_town::TownInformation>;
 
 } // namespace rlx_land

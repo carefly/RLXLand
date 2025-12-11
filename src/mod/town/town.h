@@ -4,7 +4,7 @@
 class Player;
 class Vec3;
 
-namespace rlx_land {
+namespace rlx_town {
 
 class TownInformation;
 
@@ -30,4 +30,4 @@ private:
     static bool hasTownPerm(Player* player, Vec3 pos, int perm);
 };
 
-} // namespace rlx_land
+} // namespace rlx_town

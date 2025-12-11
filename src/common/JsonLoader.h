@@ -5,16 +5,19 @@
 #include <vector>
 
 
+namespace rlx_town {
+class TownData;
+}
+
 namespace rlx_land {
 
 class LandData;
-class TownData;
 
 class JsonLoader {
 public:
     // Town相关方法
-    static std::vector<TownData> loadTownsFromFile();
-    static void                  saveTownsToFile(const std::vector<TownData>& towns);
+    static std::vector<rlx_town::TownData> loadTownsFromFile();
+    static void                            saveTownsToFile(const std::vector<rlx_town::TownData>& towns);
 
     // Lands使用新的按玩家存储方式
     static std::vector<LandData> loadLandsFromFile();

@@ -15,7 +15,7 @@ RLXLand& RLXLand::getInstance() {
     return instance;
 }
 
-bool RLXLand::load() {
+bool RLXLand::load() const {
     // 加载配置文件
     getSelf().getLogger().info("RLXLand 模组开始加载");
 
@@ -47,29 +47,32 @@ bool RLXLand::load() {
         // 如果 DLL 是可选的，继续运行
     }
 
+
+    return true;
+}
+
+bool RLXLand::enable() const {
+
+    getSelf().getLogger().info("RLXLand 正在启用中...");
+
     // 初始化数据服务
     DataService::getInstance()->initialize();
 
     // 注册命令
     LandCommands::registerCommands();
-    TownCommands::registerCommands();
+    rlx_town::TownCommands::registerCommands();
     getSelf().getLogger().info("RLXLand 模组命令已注册");
 
 
     // 注册事件处理器
     CommonEventHandlers::registerEventListeners();
     CommonEventHandlers::hookAllFunctions();
-
-    return true;
-}
-
-bool RLXLand::enable() {
     // 启用模组时的日志输出
     getSelf().getLogger().info("RLXLand 模组已启用");
     return true;
 }
 
-bool RLXLand::disable() {
+bool RLXLand::disable() const {
     // 保存玩家经济数据
     PlayerEconomyData::save();
 

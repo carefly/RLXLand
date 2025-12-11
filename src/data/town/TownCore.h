@@ -6,7 +6,12 @@
 #include <string>
 
 
-namespace rlx_land {
+namespace rlx_town {
+
+using rlx_land::BaseData;
+using rlx_land::BaseInformation;
+using rlx_land::LeviLaminaAPI;
+using rlx_land::LONG64;
 
 class TownData : public BaseData {
 public:
@@ -81,4 +86,4 @@ private:
     TownData townData; // 私有，不对外暴露
 };
 
-} // namespace rlx_land
+} // namespace rlx_town

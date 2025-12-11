@@ -22,7 +22,16 @@
 
 using namespace std;
 
-namespace rlx_land {
+namespace rlx_town {
+
+using rlx_land::LeviLaminaAPI;
+using rlx_land::PlayerInfoUtils;
+using ::DuplicateException;
+using ::NotMemberException;
+using ::PlayerNotFoundException;
+using ::RealmConflictException;
+using ::RealmOutOfRangeException;
+using ::RealmPermissionException;
 
 void TownCommands::registerCommands() {
     using ll::command::CommandRegistrar;
@@ -70,7 +79,7 @@ void TownCommands::registerCommands() {
 
                 // 检查城镇名称是否已存在
                 bool townExists = false;
-                for (auto town : DataService::getInstance()->getAllItems<TownData>()) {
+                for (auto town : rlx_land::DataService::getInstance()->getAllItems<TownData>()) {
                     if (town->getTownName() == townName) {
                         townExists = true;
                         break;
@@ -117,7 +126,7 @@ void TownCommands::registerCommands() {
                     townName,
                     mayorXuid,
                     sp->getDimensionId(),
-                    DataService::getMaxId<TownData>() + 1
+                    rlx_land::DataService::getMaxId<TownData>() + 1
                 );
 
                 try {
@@ -125,7 +134,7 @@ void TownCommands::registerCommands() {
                     auto playerInfo = PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用统一的createItem方法创建城镇
-                    DataService::getInstance()->createItem<TownData>(data, playerInfo);
+                    rlx_land::DataService::getInstance()->createItem<TownData>(data, playerInfo);
 
                     std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
                     output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
@@ -147,7 +156,7 @@ void TownCommands::registerCommands() {
                 }
 
                 TownInformation* town = nullptr;
-                for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
+                for (auto t : rlx_land::DataService::getInstance()->getAllItems<TownData>()) {
                     if (t->getTownName() == townName) {
                         town = t;
                         break;
@@ -159,13 +168,13 @@ void TownCommands::registerCommands() {
                 }
 
                 // 使用城镇的坐标删除城镇
-                DataService::getInstance()->deleteItem<TownData>(town->getX(), town->getZ(), town->getDimension());
+                rlx_land::DataService::getInstance()->deleteItem<TownData>(town->getX(), town->getZ(), town->getDimension());
 
                 output.success("删除城镇: " + townName);
                 break;
             }
             case TownCommandBasicOperation::list: {
-                auto towns = DataService::getInstance()->getAllItems<TownData>();
+                auto towns = rlx_land::DataService::getInstance()->getAllItems<TownData>();
 
                 std::string townList = "城镇列表:\n";
                 for (auto town : towns) {
@@ -181,7 +190,7 @@ void TownCommands::registerCommands() {
                 }
 
                 TownInformation* town = nullptr;
-                for (auto t : DataService::getInstance()->getAllItems<TownData>()) {
+                for (auto t : rlx_land::DataService::getInstance()->getAllItems<TownData>()) {
                     if (t->getTownName() == townName) {
                         town = t;
                         break;
@@ -199,7 +208,7 @@ void TownCommands::registerCommands() {
                 }
 
                 // 使用新的坐标参数转让镇长
-                DataService::getInstance()
+                rlx_land::DataService::getInstance()
                     ->transferTownMayor(town->getX(), town->getZ(), town->getDimension(), newXuid);
 
                 output.success("转让城镇 " + townName + " 给 " + playerName);
@@ -228,7 +237,8 @@ void TownCommands::registerCommands() {
                 // 检查是否为OP或镇长
                 // 获取玩家所在位置的Town
                 auto pos  = sp->getPosition();
-                auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto town =
+                    rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if (!town) {
                     output.error("您不在任何城镇内");
@@ -254,7 +264,7 @@ void TownCommands::registerCommands() {
                     try {
                         auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
 
-                        DataService::getInstance()->addItemMember<TownData>(
+                        rlx_land::DataService::getInstance()->addItemMember<TownData>(
                             (int)pos.x,
                             (int)pos.z,
                             sp->getDimensionId(),
@@ -279,7 +289,7 @@ void TownCommands::registerCommands() {
                     try {
                         auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
 
-                        DataService::getInstance()->removeItemMember<TownData>(
+                        rlx_land::DataService::getInstance()->removeItemMember<TownData>(
                             (int)pos.x,
                             (int)pos.z,
                             sp->getDimensionId(),
@@ -320,7 +330,8 @@ void TownCommands::registerCommands() {
             // 检查是否为OP或镇长
             // 获取玩家所在位置的Town
             auto pos  = sp->getPosition();
-            auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+            auto town =
+                rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
             TownInformation* currentTown = nullptr;
             if (town && (town->isOwner(xuid) || rlx_land::PermissionService::getInstance().isOperator(sp))) {
@@ -335,7 +346,7 @@ void TownCommands::registerCommands() {
             switch (operation) {
             case TownCommandPermOperation::perm: {
                 auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
-                DataService::getInstance()->modifyItemPermission<TownData>(
+                rlx_land::DataService::getInstance()->modifyItemPermission<TownData>(
                     currentTown->getX(),
                     currentTown->getZ(),
                     currentTown->getDimension(),
@@ -365,7 +376,8 @@ void TownCommands::registerCommands() {
             switch (operation) {
             case TownCommandOperation::info: {
                 auto pos  = sp->getPosition();
-                auto town = DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto town =
+                    rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if (town == nullptr) {
                     output.success("当前位置不在任何城镇内");
@@ -384,4 +396,4 @@ void TownCommands::registerCommands() {
         });
 }
 
-} // namespace rlx_land
+} // namespace rlx_town

@@ -8,8 +8,13 @@
 namespace rlx_land {
 // 前向声明避免循环依赖
 class LandDataManager;
-class TownDataManager;
 } // namespace rlx_land
+
+namespace rlx_town {
+class TownDataManager;
+class TownData;
+class TownInformation;
+} // namespace rlx_town
 
 
 namespace rlx_land {
@@ -40,10 +45,10 @@ struct DataLoaderTraits<LandData> {
 
 // TownData 特化
 template <>
-struct DataLoaderTraits<TownData> {
-    using DataType    = TownData;
-    using InfoType    = TownInformation;
-    using ManagerType = TownDataManager;
+struct DataLoaderTraits<rlx_town::TownData> {
+    using DataType    = rlx_town::TownData;
+    using InfoType    = rlx_town::TownInformation;
+    using ManagerType = rlx_town::TownDataManager;
 
     static std::vector<DataType> loadFromFile() { return JsonLoader::loadTownsFromFile(); }
 

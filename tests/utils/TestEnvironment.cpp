@@ -7,6 +7,9 @@
 
 namespace rlx_land::test {
 
+using rlx_town::TownData;
+using rlx_town::TownInformation;
+
 TestEnvironment& TestEnvironment::getInstance() {
     static TestEnvironment instance;
     return instance;

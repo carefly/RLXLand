@@ -3,7 +3,12 @@
 #include "common/exceptions/LandExceptions.h"
 #include <format>
 
-namespace rlx_land {
+namespace rlx_town {
+
+using rlx_land::LeviLaminaAPI;
+using ::InvalidCoordinatesException;
+using ::InvalidPermissionException;
+using ::InvalidPlayerInfoException;
 
 // TownData 构造函数实现
 TownData::TownData(
@@ -107,4 +112,4 @@ void TownData::validateBasicData(
     }
 }
 
-} // namespace rlx_land
+} // namespace rlx_town

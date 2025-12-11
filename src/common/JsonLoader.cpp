@@ -5,6 +5,7 @@
 #include "data/land/LandCore.h"
 #include "data/town/TownCore.h"
 #include "mod/RLXLand.h"
+#include <filesystem>
 #include <fstream>
 #include <ranges>
 
@@ -173,13 +174,44 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
     return allLands;
 }
 
-std::vector<TownData> JsonLoader::loadTownsFromFile() {
+std::vector<rlx_town::TownData> JsonLoader::loadTownsFromFile() {
+    using rlx_town::TownData;
+
     std::vector<TownData> towns;
     std::string           townsPath = getTownsJsonFile();
 
     // 确保towns目录存在
     std::string townsDir = getTownsBaseDir();
     ensureDirectoryExists(townsDir);
+
+    // 如果文件不存在则创建一个空文件，避免启动时报错
+    try {
+        if (!std::filesystem::exists(townsPath)) {
+            nlohmann::json emptyJson = nlohmann::json::array();
+            std::ofstream  initFile  = Utf8Utils::createUtf8OutputStream(townsPath);
+            if (initFile.is_open()) {
+                initFile << emptyJson.dump(4);
+                initFile.close();
+                rlx_land::RLXLand::getInstance().getSelf().getLogger().info(
+                    "Towns file not found, created default file at {}",
+                    townsPath
+                );
+            } else {
+                rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
+                    "Failed to create towns file {}",
+                    townsPath
+                );
+                return towns;
+            }
+        }
+    } catch (const std::exception& e) {
+        rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
+            "Failed to initialize towns file {}: {}",
+            townsPath,
+            e.what()
+        );
+        return towns;
+    }
 
     std::ifstream file = Utf8Utils::createUtf8InputStream(townsPath);
     if (!file.is_open()) {
@@ -281,7 +313,8 @@ void JsonLoader::saveLandsToFile(const std::vector<LandData>& lands) {
     }
 }
 
-void JsonLoader::saveTownsToFile(const std::vector<TownData>& towns) {
+void JsonLoader::saveTownsToFile(const std::vector<rlx_town::TownData>& towns) {
+    using rlx_town::TownData;
     nlohmann::json json;
     std::string    townsPath = getTownsJsonFile();
     std::string    townsDir  = getTownsBaseDir();

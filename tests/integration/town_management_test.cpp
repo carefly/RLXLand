@@ -12,6 +12,9 @@
 
 namespace rlx_land::test {
 
+using rlx_town::TownData;
+using rlx_town::TownInformation;
+
 // Town JSON文件验证辅助函数
 namespace TownJsonTestUtils {
 // 获取城镇JSON文件的基础路径

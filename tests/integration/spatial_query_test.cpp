@@ -9,6 +9,9 @@
 
 namespace rlx_land::test {
 
+using rlx_town::TownData;
+using rlx_town::TownInformation;
+
 TEST_CASE("Spatial Query and Boundary Check Tests", "[spatial][query][boundary]") {
 
     auto dataService = rlx_land::DataService::getInstance();

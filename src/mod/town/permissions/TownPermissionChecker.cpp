@@ -11,12 +11,12 @@
 
 using namespace std;
 
-namespace rlx_land {
+namespace rlx_town {
 
 // 检查玩家是否可以在指定位置圈地（不依赖Player的重载版本）
-bool TownPermissionChecker::canClaimLand(const PlayerInfo& playerInfo, int x, int z, int dim) {
+bool TownPermissionChecker::canClaimLand(const rlx_land::PlayerInfo& playerInfo, int x, int z, int dim) {
 
-    auto town = DataService::getInstance()->findTownAt(x, z, dim);
+    auto town = rlx_land::DataService::getInstance()->findTownAt(x, z, dim);
 
     // 如果不在任何Town中，则在Wilderness中，允许圈地
     if (town == nullptr) {
@@ -33,9 +33,16 @@ bool TownPermissionChecker::canClaimLand(const PlayerInfo& playerInfo, int x, in
 }
 
 // 检查玩家在指定位置是否有权限
-bool TownPermissionChecker::hasTownPerm(const PlayerInfo& playerInfo, int x, int z, int, int dim, int perm) {
+bool TownPermissionChecker::hasTownPerm(
+    const rlx_land::PlayerInfo& playerInfo,
+    int                         x,
+    int                         z,
+    int,
+    int dim,
+    int perm
+) {
     // 检查玩家在指定位置是否有权限
-    auto town = DataService::getInstance()->findTownAt(x, z, dim);
+    auto town = rlx_land::DataService::getInstance()->findTownAt(x, z, dim);
 
     // 检查玩家是否具有全局操作权限（腐竹）
     if (playerInfo.isOperator) {
@@ -61,4 +68,4 @@ bool TownPermissionChecker::hasTownPerm(const PlayerInfo& playerInfo, int x, int
     return false;
 }
 
-} // namespace rlx_land
+} // namespace rlx_town

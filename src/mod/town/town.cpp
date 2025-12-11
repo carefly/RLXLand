@@ -11,7 +11,7 @@
 
 using namespace std;
 
-namespace rlx_land {
+namespace rlx_town {
 
 static std::unique_ptr<Town> instance;
 
@@ -33,4 +33,4 @@ bool Town::enable() {
 
 bool Town::disable() { return true; }
 
-} // namespace rlx_land
+} // namespace rlx_town
