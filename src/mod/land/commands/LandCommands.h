@@ -1,6 +1,9 @@
 #pragma once
 
 #include <mc/server/commands/CommandRawText.h>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 namespace rlx_land {
 
@@ -31,6 +34,12 @@ struct LandPermCommand {
     LandCommandPermOperation Operation{static_cast<LandCommandPermOperation>(0)};
     int                      Perm{0};
 };
+
+enum LandBuyState : char { N = 0, A = 1, B = 2 };
+
+extern std::unordered_map<std::string, LandBuyState>   landBuyState;
+extern std::unordered_map<std::string, std::pair<int, int>> landBuyA;
+extern std::unordered_map<std::string, std::pair<int, int>> landBuyB;
 
 class LandCommands {
 public:

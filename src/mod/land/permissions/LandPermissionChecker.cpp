@@ -34,19 +34,6 @@ using namespace std;
 
 namespace rlx_land {
 
-enum LandPerm : int {
-    PERM_NULL           = 0,
-    PERM_ATK            = 1,
-    PERM_USE_ON         = 2,
-    PERM_VILLAGER_ATK   = 4,
-    PERM_BUILD          = 8,
-    PERM_POPITEM        = 16,
-    PERM_INTERWITHACTOR = 32,
-    PERM_AMRORSTANDER   = 64,
-    PERM_FISHINGHOOK    = 128,
-    PERM_FIRE           = 256
-};
-
 std::string LandPermissionChecker::showPerm(int perm, bool isOwner) {
     std::string permStr;
 
@@ -162,7 +149,8 @@ bool LandPermissionChecker::canHurt(Actor& actor, ActorDamageSource const& sourc
         }
     }
 
-    if (li != NULL && ((int)ActorType::VillagerBase == typeMasked) && !(li->getPermission() & PERM_VILLAGER_ATK)) {
+    if (li != NULL && ((int)ActorType::VillagerBase == typeMasked)
+        && !(li->getPermission() & LandPerm::PERM_VILLAGER_ATK)) {
 
         if (nullptr != sp) {
             if (rlx_land::PermissionService::getInstance().isOperator(sp)) return true;
@@ -175,7 +163,7 @@ bool LandPermissionChecker::canHurt(Actor& actor, ActorDamageSource const& sourc
     if (nullptr == sp) {
         return true;
     } else {
-        return hasPerm(sp, pos, PERM_ATK);
+        return hasPerm(sp, pos, LandPerm::PERM_ATK);
     }
 }
 

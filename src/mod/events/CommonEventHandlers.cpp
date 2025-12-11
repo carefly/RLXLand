@@ -1,5 +1,6 @@
 #include "CommonEventHandlers.h"
 #include "data/service/DataService.h"
+#include "mod/land/commands/LandCommands.h"
 #include "mod/land/permissions/LandPermissionChecker.h"
 
 #include <basetsd.h>
@@ -45,8 +46,9 @@ void CommonEventHandlers::registerEventListeners() {
     ll::event::ListenerPtr playerDestroyBlockEventListener =
         eventBus.emplaceListener<ll::event::player::PlayerDestroyBlockEvent>(
             [](ll::event::player::PlayerDestroyBlockEvent& event) {
-                event.setCancelled(!LandPermissionChecker::hasPerm(&event.self(), event.pos().center(), 8)
-                ); // PERM_BUILD = 8
+                event.setCancelled(
+                    !LandPermissionChecker::hasPerm(&event.self(), event.pos().center(), LandPerm::PERM_BUILD)
+                );
             }
         );
 
@@ -54,8 +56,9 @@ void CommonEventHandlers::registerEventListeners() {
     ll::event::ListenerPtr PlayerPlaceBlockEventListener =
         eventBus.emplaceListener<ll::event::player::PlayerPlacingBlockEvent>(
             [](ll::event::player::PlayerPlacingBlockEvent& event) {
-                event.setCancelled(!LandPermissionChecker::hasPerm(&event.self(), event.pos().center(), 8)
-                ); // PERM_BUILD = 8
+                event.setCancelled(
+                    !LandPermissionChecker::hasPerm(&event.self(), event.pos().center(), LandPerm::PERM_BUILD)
+                );
             }
         );
 
@@ -65,9 +68,41 @@ void CommonEventHandlers::registerEventListeners() {
             [](ll::event::player::PlayerInteractBlockEvent& event) {
                 auto&  p    = event.self();
                 string xuid = p.getXuid();
-                // 这里保留原来逻辑中与领地选择相关的处理，但先暂时跳过
-                event.setCancelled(!LandPermissionChecker::hasPerm(&event.self(), event.clickPos(), 32)
-                ); // PERM_INTERWITHACTOR = 32
+                auto   it   = landBuyState.find(xuid);
+
+                if (it == landBuyState.end()) {
+                    auto block = event.block();
+
+                    if (block.has_value() && block->getBlockType().isContainerBlock()) {
+                        // 容器类方块使用USE_ON权限
+                        event.setCancelled(
+                            !LandPermissionChecker::hasPerm(&event.self(), event.clickPos(), LandPerm::PERM_USE_ON)
+                        );
+                    } else {
+                        event.setCancelled(!LandPermissionChecker::hasPerm(
+                            &event.self(),
+                            event.clickPos(),
+                            LandPerm::PERM_INTERWITHACTOR
+                        ));
+                    }
+
+                } else {
+                    auto state = it->second;
+                    auto pos   = event.blockPos().center();
+                    if (LandBuyState::A == state) {
+                        landBuyA[xuid] = {(int)pos.x, (int)pos.z};
+                        p.sendMessage(format("已选择A点 x:{} z:{}", (int)pos.x, (int)pos.z));
+                        event.setCancelled(true);
+                        return;
+                    } else if (LandBuyState::B == state) {
+                        landBuyB[xuid] = {(int)pos.x, (int)pos.z};
+                        p.sendMessage(format("已选择B点 x:{} z:{}", (int)pos.x, (int)pos.z));
+                        event.setCancelled(true);
+                        return;
+                    }
+                    event.setCancelled(true);
+                    p.sendMessage(format("请退出领地选择模式"));
+                }
             }
         );
 
@@ -78,7 +113,7 @@ void CommonEventHandlers::registerEventListeners() {
             auto dim = event.blockSource().getDimensionId();
             auto li  = DataService::getInstance()->findLandAt((int)pos.x, (int)pos.z, (int)dim);
 
-            if (li != nullptr && (li->getPermission() & 256)) { // PERM_FIRE = 256
+            if (li != nullptr && (li->getPermission() & LandPerm::PERM_FIRE)) {
                 event.setCancelled(false);
             } else {
                 event.setCancelled(true);
@@ -99,7 +134,7 @@ LL_TYPE_INSTANCE_HOOK(
     auto p = &eventData.mPlayer;
     if (auto hitPos = eventData.mHit.get()) {
         Vec3 pos = *hitPos;
-        if (LandPermissionChecker::hasPerm(p, pos, 16)) { // PERM_POPITEM = 16
+        if (LandPermissionChecker::hasPerm(p, pos, LandPerm::PERM_POPITEM)) {
             return origin(eventData);
         } else {
             return;
@@ -118,7 +153,7 @@ LL_TYPE_INSTANCE_HOOK(
     Player*         player,
     BlockPos const& pos
 ) {
-    if (LandPermissionChecker::hasPerm(player, pos.center(), 16)) { // PERM_POPITEM = 16
+    if (LandPermissionChecker::hasPerm(player, pos.center(), LandPerm::PERM_POPITEM)) {
         return origin(player, pos);
     } else {
         return false;
@@ -137,7 +172,7 @@ LL_TYPE_INSTANCE_HOOK(
     if (inEntity.isPlayer()) {
         auto* sp = static_cast<Player*>(&inEntity);
 
-        if (LandPermissionChecker::hasPerm(sp, this->getPosition(), 128)) { // PERM_FISHINGHOOK = 128
+        if (LandPermissionChecker::hasPerm(sp, this->getPosition(), LandPerm::PERM_FISHINGHOOK)) {
             origin(inEntity, inSpeed);
         } else {
             return;
@@ -154,7 +189,7 @@ LL_TYPE_INSTANCE_HOOK(
     Player&                              player,
     ::SharedTypes::Legacy::EquipmentSlot slot
 ) {
-    if (LandPermissionChecker::hasPerm(&player, this->getPosition(), 64)) { // PERM_AMRORSTANDER = 64
+    if (LandPermissionChecker::hasPerm(&player, this->getPosition(), LandPerm::PERM_AMRORSTANDER)) {
         return origin(player, slot);
     } else {
         return false;
@@ -170,7 +205,7 @@ LL_STATIC_HOOK(
     const BlockPos& pos,
     int             face
 ) {
-    if (!LandPermissionChecker::hasPerm(&static_cast<Player&>(serverPlayer), pos.center(), 2)) { // PERM_USE_ON = 2
+    if (!LandPermissionChecker::hasPerm(&static_cast<Player&>(serverPlayer), pos.center(), LandPerm::PERM_USE_ON)) {
         return;
     }
     return origin(serverPlayer, pos, face);

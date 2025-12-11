@@ -6,6 +6,7 @@
 #include "mod/town/Town.h"
 #include "service/EconomyService.h"
 #include "service/PermissionService.h"
+#include "mod/land/permissions/LandPermissionChecker.h"
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
@@ -50,19 +51,6 @@ namespace rlx_land {
 
 #define LAND_RANGE 1000000
 
-enum LandPerm : int {
-    PERM_NULL           = 0,
-    PERM_ATK            = 1,
-    PERM_USE_ON         = 2,
-    PERM_VILLAGER_ATK   = 4,
-    PERM_BUILD          = 8,
-    PERM_POPITEM        = 16,
-    PERM_INTERWITHACTOR = 32,
-    PERM_AMRORSTANDER   = 64,
-    PERM_FISHINGHOOK    = 128,
-    PERM_FIRE           = 256
-};
-
 static std::string showPerm(int perm, bool isOwner = false) {
     std::string permStr;
 
@@ -95,12 +83,6 @@ static std::string showPerm(int perm, bool isOwner = false) {
 
     return permStr;
 }
-
-enum LandBuyState : char {
-    N = 0,
-    A = 1,
-    B = 2,
-};
 
 unordered_map<string, LandBuyState>   landBuyState;
 unordered_map<string, pair<int, int>> landBuyA;
