@@ -41,7 +41,7 @@ void RLXStatus::oneTick() {
     auto timeSinceLastTpsCalculation =
         std::chrono::duration_cast<std::chrono::seconds>(now - lastTpsCalculationTime_).count();
     if (timeSinceLastTpsCalculation >= 1) {
-        double tps = static_cast<double>(tickCount_) / timeSinceLastTpsCalculation;
+        double tps = static_cast<double>(tickCount_) / static_cast<double>(timeSinceLastTpsCalculation);
 
         auto level = ll::service::getLevel();
         if (!level.has_value()) return;
