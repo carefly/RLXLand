@@ -24,15 +24,6 @@ using namespace std;
 
 namespace rlx_town {
 
-using rlx_land::LeviLaminaAPI;
-using rlx_land::PlayerInfoUtils;
-using ::DuplicateException;
-using ::NotMemberException;
-using ::PlayerNotFoundException;
-using ::RealmConflictException;
-using ::RealmOutOfRangeException;
-using ::RealmPermissionException;
-
 void TownCommands::registerCommands() {
     using ll::command::CommandRegistrar;
     auto& townCommand = CommandRegistrar::getInstance().getOrCreateCommand("town", "城镇系统");
@@ -93,7 +84,7 @@ void TownCommands::registerCommands() {
                 // 获取镇长XUID
                 std::string mayorXuid = xuid; // 默认为当前操作者
                 if (!playerName.empty()) {
-                    mayorXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+                    mayorXuid = rlx_land::LeviLaminaAPI::getXuidByPlayerName(playerName);
                     if (mayorXuid.empty()) {
                         output.error("找不到玩家: " + playerName);
                         return;
@@ -131,18 +122,18 @@ void TownCommands::registerCommands() {
 
                 try {
                     // 创建PlayerInfo结构
-                    auto playerInfo = PlayerInfoUtils::fromXuid(sp->getXuid());
+                    auto playerInfo = rlx_land::PlayerInfoUtils::fromXuid(sp->getXuid());
 
                     // 使用统一的createItem方法创建城镇
                     rlx_land::DataService::getInstance()->createItem<TownData>(data, playerInfo);
 
-                    std::string mayorName = LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
+                    std::string mayorName = rlx_land::LeviLaminaAPI::getPlayerNameByXuid(mayorXuid);
                     output.success("创建城镇成功: " + townName + "，镇长: " + mayorName);
-                } catch (const RealmOutOfRangeException& e) {
+                } catch (const rlx_land::RealmOutOfRangeException& e) {
                     output.error(e.what());
-                } catch (const RealmPermissionException& e) {
+                } catch (const rlx_land::RealmPermissionException& e) {
                     output.error(e.what());
-                } catch (const RealmConflictException& e) {
+                } catch (const rlx_land::RealmConflictException& e) {
                     output.error(e.what());
                 } catch (const std::exception& e) {
                     output.error(format("创建城镇时发生错误: {}", e.what()));
@@ -168,7 +159,8 @@ void TownCommands::registerCommands() {
                 }
 
                 // 使用城镇的坐标删除城镇
-                rlx_land::DataService::getInstance()->deleteItem<TownData>(town->getX(), town->getZ(), town->getDimension());
+                rlx_land::DataService::getInstance()
+                    ->deleteItem<TownData>(town->getX(), town->getZ(), town->getDimension());
 
                 output.success("删除城镇: " + townName);
                 break;
@@ -201,7 +193,7 @@ void TownCommands::registerCommands() {
                     return;
                 }
 
-                auto newXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
+                auto newXuid = rlx_land::LeviLaminaAPI::getXuidByPlayerName(playerName);
                 if (newXuid.empty()) {
                     output.error("找不到玩家: " + playerName);
                     return;
@@ -221,95 +213,95 @@ void TownCommands::registerCommands() {
     townCommand.overload<TownMemberCommand>()
         .required("Operation")
         .required("PlayerName")
-        .execute(
-            [](CommandOrigin const& origin, CommandOutput& output, TownMemberCommand const& param, Command const&) {
-                auto* entity = origin.getEntity();
-                if (entity == nullptr || !entity->isType(ActorType::Player)) {
-                    output.error("Only players can do");
-                    return;
-                }
-
-                auto* sp         = static_cast<Player*>(entity);
-                auto  xuid       = sp->getXuid();
-                auto  operation  = param.Operation;
-                auto  playerName = param.PlayerName.mText;
-
-                // 检查是否为OP或镇长
-                // 获取玩家所在位置的Town
-                auto pos  = sp->getPosition();
-                auto town =
-                    rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
-
-                if (!town) {
-                    output.error("您不在任何城镇内");
-                    return;
-                }
-
-                if (!town->isOwner(xuid) && !rlx_land::PermissionService::getInstance().isOperator(sp)) {
-                    output.error("您不是所在城镇的镇长或腐竹");
-                    return;
-                }
-
-                auto memberXuid = LeviLaminaAPI::getXuidByPlayerName(playerName);
-                if (memberXuid.empty()) {
-                    output.error("找不到玩家: " + playerName);
-                    return;
-                }
-
-                switch (operation) {
-                case TownCommandMemberOperation::member_add: {
-
-                    auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
-
-                    try {
-                        auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
-
-                        rlx_land::DataService::getInstance()->addItemMember<TownData>(
-                            (int)pos.x,
-                            (int)pos.z,
-                            sp->getDimensionId(),
-                            currentPlayer,
-                            memberName
-                        );
-                    } catch (const PlayerNotFoundException&) {
-
-                        output.error("找不到玩家: " + playerName);
-                    } catch (const DuplicateException&) {
-                        output.error("玩家已经是成员: " + playerName);
-                    } catch (const std::exception&) {
-                        output.error("添加成员失败: " + playerName);
-                    }
-
-                    output.success("成功添加成员: " + playerName);
-                    break;
-                }
-                case TownCommandMemberOperation::member_del: {
-                    auto memberName = LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
-
-                    try {
-                        auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
-
-                        rlx_land::DataService::getInstance()->removeItemMember<TownData>(
-                            (int)pos.x,
-                            (int)pos.z,
-                            sp->getDimensionId(),
-                            currentPlayer,
-                            memberName
-                        );
-                    } catch (const PlayerNotFoundException&) {
-                        output.error("找不到玩家: " + playerName);
-                    } catch (const NotMemberException&) {
-                        output.error("玩家不是成员: " + playerName);
-                    } catch (const std::exception&) {
-                        output.error("删除成员失败: " + playerName);
-                    }
-
-                    output.success("成功删除成员: " + playerName);
-                    break;
-                }
-                }
+        .execute([](CommandOrigin const&     origin,
+                    CommandOutput&           output,
+                    TownMemberCommand const& param,
+                    Command const&) {
+            auto* entity = origin.getEntity();
+            if (entity == nullptr || !entity->isType(ActorType::Player)) {
+                output.error("Only players can do");
+                return;
             }
-        );
+
+            auto* sp         = static_cast<Player*>(entity);
+            auto  xuid       = sp->getXuid();
+            auto  operation  = param.Operation;
+            auto  playerName = param.PlayerName.mText;
+
+            // 检查是否为OP或镇长
+            // 获取玩家所在位置的Town
+            auto pos = sp->getPosition();
+            auto town =
+                rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+
+            if (!town) {
+                output.error("您不在任何城镇内");
+                return;
+            }
+
+            if (!town->isOwner(xuid) && !rlx_land::PermissionService::getInstance().isOperator(sp)) {
+                output.error("您不是所在城镇的镇长或腐竹");
+                return;
+            }
+
+            auto memberXuid = rlx_land::LeviLaminaAPI::getXuidByPlayerName(playerName);
+            if (memberXuid.empty()) {
+                output.error("找不到玩家: " + playerName);
+                return;
+            }
+
+            switch (operation) {
+            case TownCommandMemberOperation::member_add: {
+
+                auto memberName = rlx_land::LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
+
+                try {
+                    auto currentPlayer = rlx_land::PlayerInfoUtils::fromXuid(sp->getXuid());
+
+                    rlx_land::DataService::getInstance()->addItemMember<TownData>(
+                        (int)pos.x,
+                        (int)pos.z,
+                        sp->getDimensionId(),
+                        currentPlayer,
+                        memberName
+                    );
+                } catch (const rlx_land::PlayerNotFoundException&) {
+                    output.error("找不到玩家: " + playerName);
+                } catch (const rlx_land::DuplicateException&) {
+                    output.error("玩家已经是成员: " + playerName);
+                } catch (const std::exception&) {
+                    output.error("添加成员失败: " + playerName);
+                }
+
+                output.success("成功添加成员: " + playerName);
+                break;
+            }
+            case TownCommandMemberOperation::member_del: {
+                auto memberName = rlx_land::LeviLaminaAPI::getPlayerNameByXuid(memberXuid);
+
+                try {
+                    auto currentPlayer = rlx_land::PlayerInfoUtils::fromXuid(sp->getXuid());
+
+                    rlx_land::DataService::getInstance()->removeItemMember<TownData>(
+                        (int)pos.x,
+                        (int)pos.z,
+                        sp->getDimensionId(),
+                        currentPlayer,
+                        memberName
+                    );
+                } catch (const rlx_land::PlayerNotFoundException&) {
+                    output.error("找不到玩家: " + playerName);
+                } catch (const rlx_land::NotMemberException&) {
+                    output.error("玩家不是成员: " + playerName);
+                } catch (const std::exception&) {
+                    output.error("删除成员失败: " + playerName);
+                }
+
+                output.success("成功删除成员: " + playerName);
+                break;
+            }
+            }
+        });
 
     // 权限设置命令（镇长专用）
     townCommand.overload<TownPermCommand>()
@@ -329,7 +321,7 @@ void TownCommands::registerCommands() {
 
             // 检查是否为OP或镇长
             // 获取玩家所在位置的Town
-            auto pos  = sp->getPosition();
+            auto pos = sp->getPosition();
             auto town =
                 rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
@@ -345,7 +337,7 @@ void TownCommands::registerCommands() {
 
             switch (operation) {
             case TownCommandPermOperation::perm: {
-                auto currentPlayer = PlayerInfoUtils::fromXuid(sp->getXuid());
+                auto currentPlayer = rlx_land::PlayerInfoUtils::fromXuid(sp->getXuid());
                 rlx_land::DataService::getInstance()->modifyItemPermission<TownData>(
                     currentTown->getX(),
                     currentTown->getZ(),
@@ -376,8 +368,8 @@ void TownCommands::registerCommands() {
             switch (operation) {
             case TownCommandOperation::info: {
                 auto pos  = sp->getPosition();
-                auto town =
-                    rlx_land::DataService::getInstance()->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
+                auto town = rlx_land::DataService::getInstance()
+                                ->findTownAt((LONG64)pos.x, (LONG64)pos.z, sp->getDimensionId());
 
                 if (town == nullptr) {
                     output.success("当前位置不在任何城镇内");
