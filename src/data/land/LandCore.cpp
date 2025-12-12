@@ -63,10 +63,6 @@ bool LandInformation::checkIsOwner(const std::string& xuid) const { return landD
 void LandInformation::refreshOwnerName() {
     // 优先从文件名读取（初始化时总是可用）
     std::string playerName = JsonLoader::getPlayerNameFromFileName(landData.ownerXuid);
-    // 如果文件名中没有，尝试从 API 获取（玩家在线时）
-    if (playerName.empty()) {
-        playerName = LeviLaminaAPI::getPlayerNameByXuid(landData.ownerXuid);
-    }
     // 如果还是为空，使用 "Unknown" 作为 fallback
     if (playerName.empty()) {
         playerName = "Unknown";
@@ -78,6 +74,11 @@ void LandInformation::setOwnerXuid(const std::string& xuid) {
     landData.ownerXuid = xuid;
     // 使用 refreshOwnerName() 来保持一致性，优先从文件名读取
     refreshOwnerName();
+}
+
+// 验证当前数据的合法性
+void LandData::validate() const {
+    validateBasicData(x, z, x_end, z_end, ownerXuid, perm);
 }
 
 // 基础数据校验方法

@@ -48,6 +48,9 @@ public:
         LONG64             id
     );
 
+    // 验证当前数据的合法性（用于从文件加载后的验证）
+    void validate() const;
+
 private:
     // 基础数据校验方法
     static void validateBasicData(

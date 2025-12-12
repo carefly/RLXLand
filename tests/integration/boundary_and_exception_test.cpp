@@ -302,21 +302,15 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 PlayerInfo operatorInfo("100000001", "腐竹", true);
 
-                // 根据实际实现调整测试预期
-                // 如果系统允许空名称，则测试创建成功
-                // 如果不允许，则测试抛出异常
-                try {
-                    dataService->createItem<TownData>(emptyNameTown, operatorInfo);
-                    // 如果创建成功，验证城镇确实被创建
-                    auto* town = dataService->findTownAt(150, 150, 0);
-                    REQUIRE(town != nullptr);
-                    // 验证空名称被接受（当前实现允许空名称）
-                    REQUIRE(town->getTownName().empty());
-                } catch (const std::exception&) {
-                    // 如果抛出异常，说明系统不允许空名称
-                    // 这种情况下应该抛出适当的异常类型
-                    REQUIRE(false); // 当前实现应该允许空名称，如果抛出异常则测试失败
-                }
+                // 验证空名称城镇创建失败（新验证逻辑不允许空名称）
+                REQUIRE_THROWS_AS(
+                    dataService->createItem<TownData>(emptyNameTown, operatorInfo),
+                    InvalidPlayerInfoException
+                );
+
+                // 验证城镇确实没有被创建
+                auto* town = dataService->findTownAt(150, 150, 0);
+                REQUIRE(town == nullptr);
             }
 
             SECTION("Invalid Mayor XUID") {
@@ -335,21 +329,15 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
 
                 PlayerInfo operatorInfo("100000001", "腐竹", true);
 
-                // 根据实际实现调整测试预期
-                try {
-                    dataService->createItem<TownData>(invalidMayorTown, operatorInfo);
-                    // 如果创建成功，验证城镇确实被创建
-                    auto* town = dataService->findTownAt(150, 150, 0);
-                    REQUIRE(town != nullptr);
-                    // 验证空XUID被接受（当前实现允许空XUID）
-                    REQUIRE(town->getMayorXuid().empty());
-                    // 验证城镇名称正确设置
-                    REQUIRE(town->getTownName() == "无效镇长城镇");
-                } catch (const std::exception&) {
-                    // 如果抛出异常，说明系统不允许空XUID
-                    // 这种情况下应该抛出适当的异常类型
-                    REQUIRE(false); // 当前实现应该允许空XUID，如果抛出异常则测试失败
-                }
+                // 验证空镇长XUID城镇创建失败（新验证逻辑不允许空XUID）
+                REQUIRE_THROWS_AS(
+                    dataService->createItem<TownData>(invalidMayorTown, operatorInfo),
+                    InvalidPlayerInfoException
+                );
+
+                // 验证城镇确实没有被创建
+                auto* town = dataService->findTownAt(150, 150, 0);
+                REQUIRE(town == nullptr);
             }
         }
 

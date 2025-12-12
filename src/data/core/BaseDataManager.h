@@ -42,6 +42,9 @@ public:
     // 获取所有项
     std::vector<U*> getAllItems() const;
 
+    // 直接添加项（用于加载数据时使用，不保存到文件）
+    void addItemDirectly(U* info);
+
     // 清理所有数据（测试专用）
     void clearAllItems();
 };

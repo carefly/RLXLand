@@ -203,37 +203,166 @@ void DataService::loadData(typename DataLoaderTraits<T>::ManagerType* manager, c
 
     std::vector<DataType> items = Traits::loadFromFile();
 
+    // 统计信息
+    size_t successCount     = 0;
+    size_t outOfRangeCount  = 0;
+    size_t invalidDataCount = 0;
+
 #ifdef TESTING
     LOG_INFO(std::format("load {}s from JSON", typeName));
 #else
-    RLXLand::getInstance().getSelf().getLogger().info(std::format("load {} {}s from JSON", items.size(), typeName));
+    size_t totalCount = items.size();
+    RLXLand::getInstance().getSelf().getLogger().info(std::format("开始加载 {} 个 {} 数据", totalCount, typeName));
 #endif
 
     for (const auto& item : items) {
-        // Land 特有的范围检查
+        // 范围检查和数据验证
         if constexpr (std::is_same_v<T, LandData>) {
             LONG64 x1 = item.x;
-            LONG64 x2 = item.x_end; // 使用新的终点坐标字段
+            LONG64 x2 = item.x_end;
             LONG64 z1 = item.z;
-            LONG64 z2 = item.z_end; // 使用新的终点坐标字段
+            LONG64 z2 = item.z_end;
 
+            // 检查是否超出范围
             if (x1 >= LAND_RANGE || x1 <= -LAND_RANGE || x2 >= LAND_RANGE || x2 <= -LAND_RANGE || z1 >= LAND_RANGE
-                || z1 <= -LAND_RANGE || z2 >= LAND_RANGE || z2 <= -LAND_RANGE)
+                || z1 <= -LAND_RANGE || z2 >= LAND_RANGE || z2 <= -LAND_RANGE) {
+                outOfRangeCount++;
+#ifndef TESTING
+                RLXLand::getInstance().getSelf().getLogger().warn(
+                    "跳过超出范围的{}数据: owner={}, x={}, z={}, x_end={}, z_end={}, d={}, id={} (LAND_RANGE={})",
+                    typeName,
+                    item.ownerXuid,
+                    item.x,
+                    item.z,
+                    item.x_end,
+                    item.z_end,
+                    item.d,
+                    item.id,
+                    LAND_RANGE
+                );
+#endif
                 continue;
+            }
+
+            // 验证数据合法性
+            try {
+                item.validate();
+            } catch (const std::exception&
+#ifndef TESTING
+                         e
+#endif
+            ) {
+                invalidDataCount++;
+#ifndef TESTING
+                RLXLand::getInstance().getSelf().getLogger().error(
+                    "跳过非法{}数据: owner={}, x={}, z={}, x_end={}, z_end={}, d={}, perm={}, id={}, 原因: {}",
+                    typeName,
+                    item.ownerXuid,
+                    item.x,
+                    item.z,
+                    item.x_end,
+                    item.z_end,
+                    item.d,
+                    item.perm,
+                    item.id,
+                    e.what()
+                );
+#endif
+                continue;
+            }
+        } else if constexpr (std::is_same_v<T, rlx_town::TownData>) {
+            LONG64 x1 = item.x;
+            LONG64 x2 = item.x_end;
+            LONG64 z1 = item.z;
+            LONG64 z2 = item.z_end;
+
+            // 检查是否超出范围（Town 也使用相同的范围限制）
+            if (x1 >= LAND_RANGE || x1 <= -LAND_RANGE || x2 >= LAND_RANGE || x2 <= -LAND_RANGE || z1 >= LAND_RANGE
+                || z1 <= -LAND_RANGE || z2 >= LAND_RANGE || z2 <= -LAND_RANGE) {
+                outOfRangeCount++;
+#ifndef TESTING
+                RLXLand::getInstance().getSelf().getLogger().warn(
+                    "跳过超出范围的{}数据: name={}, mayor={}, x={}, z={}, x_end={}, z_end={}, d={}, id={} "
+                    "(LAND_RANGE={})",
+                    typeName,
+                    item.name,
+                    item.mayorXuid,
+                    item.x,
+                    item.z,
+                    item.x_end,
+                    item.z_end,
+                    item.d,
+                    item.id,
+                    LAND_RANGE
+                );
+#endif
+                continue;
+            }
+
+            // 验证数据合法性
+            try {
+                item.validate();
+            } catch (const std::exception&
+#ifndef TESTING
+                         e
+#endif
+            ) {
+                invalidDataCount++;
+#ifndef TESTING
+                RLXLand::getInstance().getSelf().getLogger().error(
+                    "跳过非法{}数据: name={}, mayor={}, x={}, z={}, x_end={}, z_end={}, d={}, perm={}, id={}, 原因: {}",
+                    typeName,
+                    item.name,
+                    item.mayorXuid,
+                    item.x,
+                    item.z,
+                    item.x_end,
+                    item.z_end,
+                    item.d,
+                    item.perm,
+                    item.id,
+                    e.what()
+                );
+#endif
+                continue;
+            }
         }
 
         auto info = new InfoType(item);
 
         // 初始化特定信息
-        if constexpr (std::is_same_v<InfoType, LandInformation> || std::is_same_v<InfoType, rlx_town::TownInformation>) {
+        if constexpr (std::is_same_v<InfoType, LandInformation>
+                      || std::is_same_v<InfoType, rlx_town::TownInformation>) {
             info->refreshOwnerName();
         }
 
-        manager->getAllItems().push_back(info);
+        manager->addItemDirectly(info);
 
         // 更新空间地图
         updateSpatialMapRange<InfoType>(info, item.x, item.z, item.x_end, item.z_end, item.d);
+
+        successCount++;
     }
+
+    // 输出加载统计信息
+#ifdef TESTING
+    LOG_INFO(std::format("loaded {} {}s successfully", successCount, typeName));
+#else
+    if (outOfRangeCount > 0 || invalidDataCount > 0) {
+        RLXLand::getInstance().getSelf().getLogger().warn(
+            "加载{}数据完成: 总数={}, 成功={}, 跳过={} (超出范围={}, 非法数据={})",
+            typeName,
+            totalCount,
+            successCount,
+            outOfRangeCount + invalidDataCount,
+            outOfRangeCount,
+            invalidDataCount
+        );
+    } else {
+        RLXLand::getInstance().getSelf().getLogger().info("加载{}数据完成: 总数={}, 全部成功", typeName, totalCount);
+    }
+
+#endif
 }
 
 template <typename T>
@@ -364,28 +493,13 @@ template std::vector<LandInformation*> DataService::getAllItems<LandData>();
 template void DataService::loadItems<rlx_town::TownData>();
 template void DataService::createItem<rlx_town::TownData>(rlx_town::TownData data, const PlayerInfo& playerInfo);
 template void DataService::deleteItem<rlx_town::TownData>(LONG64 x, LONG64 z, int dimension);
-template void DataService::modifyItemPermission<rlx_town::TownData>(
-    LONG64 x,
-    LONG64 z,
-    int    dimension,
-    int    perm,
-    const PlayerInfo& playerInfo
-);
-template void DataService::addItemMember<rlx_town::TownData>(
-    LONG64             x,
-    LONG64             z,
-    int                dimension,
-    const PlayerInfo&  playerInfo,
-    const std::string& playerName
-);
-template void DataService::removeItemMember<rlx_town::TownData>(
-    LONG64             x,
-    LONG64             z,
-    int                dimension,
-    const PlayerInfo&  playerInfo,
-    const std::string& playerName
-);
-template LONG64                              DataService::getMaxId<rlx_town::TownData>();
+template void DataService::modifyItemPermission<
+    rlx_town::TownData>(LONG64 x, LONG64 z, int dimension, int perm, const PlayerInfo& playerInfo);
+template void DataService::addItemMember<
+    rlx_town::TownData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template void DataService::removeItemMember<
+    rlx_town::TownData>(LONG64 x, LONG64 z, int dimension, const PlayerInfo& playerInfo, const std::string& playerName);
+template LONG64                                  DataService::getMaxId<rlx_town::TownData>();
 template std::vector<rlx_town::TownInformation*> DataService::getAllItems<rlx_town::TownData>();
 
 // 地图更新函数的模板实例化
@@ -394,17 +508,11 @@ template void
 DataService::updateSpatialMap<rlx_town::TownInformation>(rlx_town::TownInformation* info, LONG64 x, LONG64 z, int d);
 template void DataService::updateSpatialMapRange<
     LandInformation>(LandInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
-template void DataService::updateSpatialMapRange<rlx_town::TownInformation>(
-    rlx_town::TownInformation* info,
-    LONG64                     x1,
-    LONG64                     z1,
-    LONG64                     x2,
-    LONG64                     z2,
-    int                        d
-);
+template void DataService::updateSpatialMapRange<
+    rlx_town::TownInformation>(rlx_town::TownInformation* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d);
 
 // 空间查询方法的模板实例化
-template LandInformation* DataService::findItemAt<LandData>(LONG64 x, LONG64 z, int dimension);
+template LandInformation*           DataService::findItemAt<LandData>(LONG64 x, LONG64 z, int dimension);
 template rlx_town::TownInformation* DataService::findItemAt<rlx_town::TownData>(LONG64 x, LONG64 z, int dimension);
 
 // 坐标验证方法的模板实例化
@@ -426,6 +534,8 @@ void DataService::validatePlayerInfo(const PlayerInfo& playerInfo) {
 }
 
 void DataService::validateLandCreation(const LandData& data, const PlayerInfo& playerInfo) {
+    // 首先验证数据的基本合法性
+    data.validate();
     validateCoordinatesRange<LandData>(data);
     validatePermission(data.perm);
     validateTownPermission(data, playerInfo);
@@ -485,6 +595,8 @@ void DataService::validateLandConflict(const LandData& data) {
 
 // Town验证方法实现
 void DataService::validateTownCreation(const rlx_town::TownData& data, const PlayerInfo& playerInfo) {
+    // 首先验证数据的基本合法性
+    data.validate();
     validateCoordinatesRange<rlx_town::TownData>(data);
     validatePermission(data.perm);
     validateOperatorPermission(playerInfo);

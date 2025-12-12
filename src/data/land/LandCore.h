@@ -32,6 +32,9 @@ public:
     // 便利构造函数（用于创建新土地）
     LandData(int x, int z, int x_end, int z_end, const std::string& ownerXuid, int d, LONG64 id);
 
+    // 验证当前数据的合法性（用于从文件加载后的验证）
+    void validate() const;
+
 private:
     // 基础数据校验方法
     static void validateBasicData(int x, int z, int x_end, int z_end, const std::string& ownerXuid, int perm);

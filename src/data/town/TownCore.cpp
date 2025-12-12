@@ -81,6 +81,11 @@ void TownInformation::setMayorXuid(const std::string& xuid) {
     setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(xuid));
 }
 
+// 验证当前数据的合法性
+void TownData::validate() const {
+    validateBasicData(x, z, x_end, z_end, name, mayorXuid, perm);
+}
+
 // 基础数据校验方法
 void TownData::validateBasicData(
     int                x,

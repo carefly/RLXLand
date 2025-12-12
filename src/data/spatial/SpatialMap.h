@@ -6,8 +6,6 @@ namespace rlx_land {
 
 // 前向声明
 template <typename InfoType>
-class SmallMap;
-template <typename InfoType>
 class MiddleMap;
 template <typename InfoType>
 class BigMap;
@@ -18,7 +16,6 @@ class SpatialMap {
 private:
     // 只有 DataService 可以访问 SpatialMap 的公共接口
     friend class DataService;
-    friend class SmallMap<InfoType>;
     friend class MiddleMap<InfoType>;
     friend class BigMap<InfoType>;
 
@@ -34,39 +31,26 @@ private:
     BigMap<InfoType>* map[20][20][3] = {};
 };
 
-template <typename InfoType>
-class SmallMap {
-public:
-    SmallMap(int x, int z, int d);
-    void      setInfo(int sx, int sz, InfoType* info);
-    InfoType* getInfo(int sx, int sz);
-    ~SmallMap();
-
-    int x, z, d;
-    int size = 100;
-
-    BigMap<InfoType>*    bigMap    = nullptr;
-    MiddleMap<InfoType>* middleMap = nullptr;
-
-private:
-    InfoType** map;
-};
-
+// MiddleMap 直接存储 InfoType** 数组指针（方案2：去掉SmallMap类）
 template <typename InfoType>
 class MiddleMap {
 public:
-    MiddleMap(int x, int z, int d);
-    void                setMap(int sx, int sz, SmallMap<InfoType>* sm);
-    SmallMap<InfoType>* getMap(int sx, int sz);
+    MiddleMap();
     ~MiddleMap();
 
-    int x, z, d;
-    int size = 100;
+    // 数组操作
+    void       setInfoArray(int sx, int sz, InfoType** arr);
+    InfoType** getInfoArray(int sx, int sz);
+    InfoType** getOrCreateInfoArray(int sx, int sz);
 
-    BigMap<InfoType>* bigMap = nullptr;
+    // 直接访问InfoType
+    void      setInfo(int sx, int sz, int ix, int iz, InfoType* info);
+    InfoType* getInfo(int sx, int sz, int ix, int iz);
 
 private:
-    SmallMap<InfoType>** map;
+    static constexpr int SIZE      = 100; // MiddleMap内数组个数：100x100
+    static constexpr int INFO_SIZE = 100; // 每个数组存储InfoType*的个数：100x100
+    InfoType***          map;             // 指向 InfoType*[10000] 数组的指针数组
 };
 
 template <typename InfoType>
@@ -84,58 +68,58 @@ private:
     MiddleMap<InfoType>** map;
 };
 
+// MiddleMap 实现
 template <typename InfoType>
-SmallMap<InfoType>::SmallMap(int x, int z, int d) : x(x),
-                                                    z(z),
-                                                    d(d) {
-    map = new InfoType*[size * size];
-    for (int i = 0; i < size * size; i++) map[i] = nullptr;
+MiddleMap<InfoType>::MiddleMap() {
+    map = new InfoType**[SIZE * SIZE];
+    for (int i = 0; i < SIZE * SIZE; i++) map[i] = nullptr;
 }
 
 template <typename InfoType>
-void SmallMap<InfoType>::setInfo(int sx, int sz, InfoType* info) {
-    map[sx + sz * size] = info;
+void MiddleMap<InfoType>::setInfoArray(int sx, int sz, InfoType** arr) {
+    map[sx + sz * SIZE] = arr;
 }
 
 template <typename InfoType>
-InfoType* SmallMap<InfoType>::getInfo(int sx, int sz) {
-    return map[sx + sz * size];
+InfoType** MiddleMap<InfoType>::getInfoArray(int sx, int sz) {
+    return map[sx + sz * SIZE];
 }
 
 template <typename InfoType>
-SmallMap<InfoType>::~SmallMap() {
-    delete[] map;
+InfoType** MiddleMap<InfoType>::getOrCreateInfoArray(int sx, int sz) {
+    int idx = sx + sz * SIZE;
+    if (map[idx] == nullptr) {
+        map[idx] = new InfoType*[INFO_SIZE * INFO_SIZE];
+        for (int i = 0; i < INFO_SIZE * INFO_SIZE; i++) map[idx][i] = nullptr;
+    }
+    return map[idx];
 }
 
 template <typename InfoType>
-MiddleMap<InfoType>::MiddleMap(int x, int z, int d) : x(x),
-                                                      z(z),
-                                                      d(d) {
-    map = new SmallMap<InfoType>*[size * size];
-    for (int i = 0; i < size * size; i++) map[i] = nullptr;
+void MiddleMap<InfoType>::setInfo(int sx, int sz, int ix, int iz, InfoType* info) {
+    InfoType** arr           = getOrCreateInfoArray(sx, sz);
+    arr[ix + iz * INFO_SIZE] = info;
 }
 
 template <typename InfoType>
-void MiddleMap<InfoType>::setMap(int sx, int sz, SmallMap<InfoType>* sm) {
-    map[sx + sz * size] = sm;
-}
-
-template <typename InfoType>
-SmallMap<InfoType>* MiddleMap<InfoType>::getMap(int sx, int sz) {
-    return map[sx + sz * size];
+InfoType* MiddleMap<InfoType>::getInfo(int sx, int sz, int ix, int iz) {
+    InfoType** arr = getInfoArray(sx, sz);
+    if (arr == nullptr) return nullptr;
+    return arr[ix + iz * INFO_SIZE];
 }
 
 template <typename InfoType>
 MiddleMap<InfoType>::~MiddleMap() {
-    for (int i = 0; i < size * size; i++) {
+    for (int i = 0; i < SIZE * SIZE; i++) {
         if (map[i] != nullptr) {
-            delete map[i];
+            delete[] map[i]; // 释放 InfoType*[] 数组
             map[i] = nullptr;
         }
     }
     delete[] map;
 }
 
+// BigMap 实现
 template <typename InfoType>
 BigMap<InfoType>::BigMap(int x, int z, int d) : x(x),
                                                 z(z),
@@ -167,6 +151,7 @@ BigMap<InfoType>::~BigMap() {
     delete[] map;
 }
 
+// SpatialMap 实现
 template <typename InfoType>
 InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
     // 添加维度边界检查
@@ -200,10 +185,8 @@ InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
     x = x - smallx * 100;
     z = z - smallz * 100;
 
-    SmallMap<InfoType>* smallMap = middleMap->getMap(smallx, smallz);
-    if (smallMap == nullptr) return nullptr;
-
-    return smallMap->getInfo((int)x, (int)z);
+    // 直接从 MiddleMap 获取 InfoType
+    return middleMap->getInfo(smallx, smallz, (int)x, (int)z);
 }
 
 template <typename InfoType>
@@ -235,8 +218,7 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
 
     MiddleMap<InfoType>* middleMap = bigMap->getMap(middlex, middlez);
     if (middleMap == nullptr) {
-        middleMap         = new MiddleMap<InfoType>(middlex, middlez, d);
-        middleMap->bigMap = bigMap;
+        middleMap = new MiddleMap<InfoType>();
         bigMap->setMap(middlex, middlez, middleMap);
     }
 
@@ -246,15 +228,8 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
     x = x - smallx * 100;
     z = z - smallz * 100;
 
-    SmallMap<InfoType>* smallMap = middleMap->getMap(smallx, smallz);
-    if (smallMap == nullptr) {
-        smallMap            = new SmallMap<InfoType>(smallx, smallz, d);
-        smallMap->bigMap    = bigMap;
-        smallMap->middleMap = middleMap;
-        middleMap->setMap(smallx, smallz, smallMap);
-    }
-
-    smallMap->setInfo((int)x, (int)z, info);
+    // 直接在 MiddleMap 中设置 InfoType
+    middleMap->setInfo(smallx, smallz, (int)x, (int)z, info);
 }
 
 template <typename InfoType>

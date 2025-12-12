@@ -160,6 +160,11 @@ std::vector<U*> BaseDataManager<T, U>::getAllItems() const {
 }
 
 template <typename T, typename U>
+void BaseDataManager<T, U>::addItemDirectly(U* info) {
+    informationList.push_back(info);
+}
+
+template <typename T, typename U>
 void BaseDataManager<T, U>::clearAllItems() {
     for (auto* info : informationList) {
         delete info;

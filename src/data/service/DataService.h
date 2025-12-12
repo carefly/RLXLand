@@ -61,11 +61,11 @@ public:
     typename DataLoaderTraits<T>::InfoType* findItemAt(LONG64 x, LONG64 z, int dimension);
 
     // 便捷的专用查询方法
-    LandInformation*        findLandAt(LONG64 x, LONG64 z, int dimension);
+    LandInformation*           findLandAt(LONG64 x, LONG64 z, int dimension);
     rlx_town::TownInformation* findTownAt(LONG64 x, LONG64 z, int dimension);
 
     // Town 特有的方法（无法统一的方法）
-    void                      transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName);
+    void                       transferTownMayor(LONG64 x, LONG64 z, int dimension, const std::string& playerName);
     rlx_town::TownInformation* findTownByName(const std::string& name);
 
 #ifdef TESTING
@@ -74,7 +74,7 @@ public:
 #endif
 
 private:
-    std::unique_ptr<LandDataManager>       landManager;
+    std::unique_ptr<LandDataManager>           landManager;
     std::unique_ptr<rlx_town::TownDataManager> townManager;
 
     DataService();
