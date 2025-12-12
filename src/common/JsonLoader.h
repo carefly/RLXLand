@@ -23,6 +23,12 @@ public:
     static std::vector<LandData> loadLandsFromFile();
     static void                  saveLandsToFile(const std::vector<LandData>& lands);
 
+    // 从文件名获取玩家名称（用于初始化时的 fallback）
+    static std::string getPlayerNameFromFileName(const std::string& xuid);
+
+    // 检查并更新玩家文件名（在玩家登录时调用）
+    static void checkAndUpdatePlayerFileName(const std::string& xuid, const std::string& currentPlayerName);
+
 private:
     // 路径管理
     static std::string getLandsBaseDir();

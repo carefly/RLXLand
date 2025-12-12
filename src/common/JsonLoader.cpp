@@ -3,6 +3,7 @@
 #include "common/PathConfig.h"
 #include "common/Utf8Utils.h"
 #include "data/land/LandCore.h"
+#include "data/service/DataService.h"
 #include "data/town/TownCore.h"
 #include "mod/RLXLand.h"
 #include <filesystem>
@@ -12,6 +13,8 @@
 
 namespace rlx_land {
 
+// 静态映射：存储从文件名解析的 xuid 到 playerName 的映射（用于初始化时的 fallback）
+static std::map<std::string, std::string> xuidToNameFromFiles;
 
 // 路径管理方法
 
@@ -125,10 +128,18 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
     // 确保目录存在
     ensureDirectoryExists(landsDir);
 
+    // 清空之前的映射
+    xuidToNameFromFiles.clear();
+
     // 扫描所有玩家文件并加载
     auto playerFiles = scanPlayerFiles();
 
     for (const auto& file : playerFiles) {
+        // 从文件名解析出 xuid 和 playerName，并存储到映射中
+        auto [xuid, playerName] = parseFileName(file);
+        if (!xuid.empty() && !playerName.empty()) {
+            xuidToNameFromFiles[xuid] = playerName;
+        }
         std::filesystem::path fullPath = std::filesystem::path(landsDir) / file;
         try {
             std::ifstream fileStream = Utf8Utils::createUtf8InputStream(fullPath.string());
@@ -172,6 +183,41 @@ std::vector<LandData> JsonLoader::loadLandsFromFile() {
     }
 
     return allLands;
+}
+
+std::string JsonLoader::getPlayerNameFromFileName(const std::string& xuid) {
+    auto it = xuidToNameFromFiles.find(xuid);
+    if (it != xuidToNameFromFiles.end()) {
+        return it->second;
+    }
+    return "";
+}
+
+void JsonLoader::checkAndUpdatePlayerFileName(const std::string& xuid, const std::string& currentPlayerName) {
+    if (xuid.empty() || currentPlayerName.empty()) {
+        return;
+    }
+
+    // 检查文件名是否需要更新
+    bool wasRenamed = needsFileRename(xuid, currentPlayerName);
+    if (wasRenamed) {
+        // 更新文件名
+        renamePlayerFileIfNeeded(xuid, currentPlayerName);
+    }
+
+    // 更新内存中的映射（确保映射是最新的）
+    xuidToNameFromFiles[xuid] = currentPlayerName;
+
+    // 只有当文件名被更新时，才刷新所有相关的 LandInformation 对象的 ownerName
+    // 以保持与修改后的文件名一致
+    if (wasRenamed) {
+        auto allLands = DataService::getInstance()->getAllItems<LandData>();
+        for (auto* landInfo : allLands) {
+            if (landInfo->getOwnerXuid() == xuid) {
+                landInfo->refreshOwnerName();
+            }
+        }
+    }
 }
 
 std::vector<rlx_town::TownData> JsonLoader::loadTownsFromFile() {

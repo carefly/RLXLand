@@ -1,4 +1,5 @@
 #include "CommonEventHandlers.h"
+#include "common/JsonLoader.h"
 #include "data/service/DataService.h"
 #include "mod/land/commands/LandCommands.h"
 #include "mod/land/permissions/LandPermissionChecker.h"
@@ -11,6 +12,7 @@
 #include <ll/api/event/player/PlayerClickEvent.h>
 #include <ll/api/event/player/PlayerDestroyBlockEvent.h>
 #include <ll/api/event/player/PlayerInteractBlockEvent.h>
+#include <ll/api/event/player/PlayerJoinEvent.h>
 #include <ll/api/event/player/PlayerPlaceBlockEvent.h>
 #include <ll/api/event/world/FireSpreadEvent.h>
 #include <ll/api/service/Bedrock.h>
@@ -118,6 +120,17 @@ void CommonEventHandlers::registerEventListeners() {
                 event.setCancelled(false);
             } else {
                 event.setCancelled(true);
+            }
+        });
+
+    // 玩家加入事件 - 检查并更新文件名
+    ll::event::ListenerPtr playerJoinEventListener =
+        eventBus.emplaceListener<ll::event::player::PlayerJoinEvent>([](ll::event::player::PlayerJoinEvent& event) {
+            auto&       player     = event.self();
+            std::string xuid       = player.getXuid();
+            std::string playerName = std::string(player.mName);
+            if (!xuid.empty() && !playerName.empty()) {
+                JsonLoader::checkAndUpdatePlayerFileName(xuid, playerName);
             }
         });
 }

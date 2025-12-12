@@ -1,7 +1,9 @@
 #include "LandCore.h"
+#include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include <format>
+
 
 namespace rlx_land {
 
@@ -49,19 +51,33 @@ LandData::LandData(int x, int z, int x_end, int z_end, const std::string& ownerX
     this->memberXuids = {};
 }
 
-LandInformation::LandInformation(LandData ld) 
-    : BaseInformation(static_cast<BaseData&>(ld)), 
-      landData(std::move(ld)) {
+LandInformation::LandInformation(LandData ld) : BaseInformation(static_cast<BaseData&>(ld)), landData(std::move(ld)) {
     // 更新 dataRef 指向 landData 中的 BaseData 部分
     updateDataRef(static_cast<BaseData&>(landData));
-    setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(landData.ownerXuid));
+    // 使用 refreshOwnerName() 来获取 ownerName，它会尝试从文件名获取作为 fallback
+    refreshOwnerName();
 }
 
 bool LandInformation::checkIsOwner(const std::string& xuid) const { return landData.ownerXuid == xuid; }
 
+void LandInformation::refreshOwnerName() {
+    // 优先从文件名读取（初始化时总是可用）
+    std::string playerName = JsonLoader::getPlayerNameFromFileName(landData.ownerXuid);
+    // 如果文件名中没有，尝试从 API 获取（玩家在线时）
+    if (playerName.empty()) {
+        playerName = LeviLaminaAPI::getPlayerNameByXuid(landData.ownerXuid);
+    }
+    // 如果还是为空，使用 "Unknown" 作为 fallback
+    if (playerName.empty()) {
+        playerName = "Unknown";
+    }
+    setOwnerName(playerName);
+}
+
 void LandInformation::setOwnerXuid(const std::string& xuid) {
     landData.ownerXuid = xuid;
-    setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(xuid));
+    // 使用 refreshOwnerName() 来保持一致性，优先从文件名读取
+    refreshOwnerName();
 }
 
 // 基础数据校验方法
