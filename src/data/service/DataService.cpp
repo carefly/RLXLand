@@ -470,11 +470,8 @@ void DataService::updateSpatialMap(U* info, LONG64 x, LONG64 z, int d) {
 
 template <typename U>
 void DataService::updateSpatialMapRange(U* info, LONG64 x1, LONG64 z1, LONG64 x2, LONG64 z2, int d) {
-    for (LONG64 x = x1; x <= x2; x++) {
-        for (LONG64 z = z1; z <= z2; z++) {
-            SpatialMap<U>::getInstance()->set(info, x, z, d);
-        }
-    }
+    // 使用优化的范围设置方法，支持批量整块填充
+    SpatialMap<U>::getInstance()->setRange(info, x1, z1, x2, z2, d);
 }
 
 // 显式模板实例化

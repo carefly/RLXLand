@@ -303,4 +303,22 @@ int PlayerEconomyData::getPlayerMoney(const std::string& xuid) {
     }
 }
 
+void PlayerEconomyData::resetAllData() {
+    // 清空本地缓存的经济数据
+    playerEconomyMap.clear();
+
+    // 重置数据修改标志
+    isDataModified = false;
+
+    // 重置默认币种ID，强制下次使用时重新初始化
+    defaultCurrencyId.clear();
+
+    // 重置 DLL 可用性状态，强制下次重新检测
+    s_moneyDllAvailable = false;
+
+    // 如果 RLXMoney DLL 可用，可能还需要处理 DLL 端的数据
+    // 但在测试环境中，通常只使用本地模式，所以这里主要清理本地缓存
+    // 在实际的 DLL 环境中，可能需要额外的清理操作
+}
+
 } // namespace rlx_land

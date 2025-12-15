@@ -40,6 +40,9 @@ public:
     // 检查 money DLL 是否可用
     static bool isMoneyDllAvailable();
 
+    // 重置所有经济数据（主要用于测试）
+    static void resetAllData();
+
 private:
     // 默认币种ID（从 RLXMoney DLL 获取）
     static std::string defaultCurrencyId;

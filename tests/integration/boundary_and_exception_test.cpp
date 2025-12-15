@@ -866,7 +866,7 @@ TEST_CASE("Boundary and Exception Tests", "[boundary][exception]") {
             REQUIRE(createdLand->getOwnerXuid() == "200000001");
 
             // 测试边界查询
-            auto* boundaryLand1 = dataService->findLandAt(LAND_RANGE, LAND_RANGE, 0);
+            auto* boundaryLand1 = dataService->findLandAt(LAND_RANGE - 1, LAND_RANGE - 1, 0);
             REQUIRE(boundaryLand1 != nullptr);
 
             // 测试超出边界1格

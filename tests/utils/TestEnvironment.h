@@ -25,6 +25,8 @@ public:
 
     // 清理方法
     void cleanupDefaultLandsFolder();
+    void resetEconomyData();
+    void resetAllTestData(); // 完整重置所有测试数据
 
     // 测试辅助方法 - 获取Land或Town的中心坐标
     template <typename T>

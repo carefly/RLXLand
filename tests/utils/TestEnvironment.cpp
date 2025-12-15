@@ -1,5 +1,7 @@
 #include "TestEnvironment.h"
 #include "common/Utf8Utils.h"
+#include "data/core/PlayerEconomyData.h"
+#include "data/service/DataService.h"
 #include "overrides/common/LeviLaminaAPI.h"
 #include <filesystem>
 #include <iostream>
@@ -35,6 +37,9 @@ void TestEnvironment::initialize() {
     // 清理默认lands文件夹数据
     cleanupDefaultLandsFolder();
 
+    // 重置经济数据
+    resetEconomyData();
+
     // 设置模拟环境
     setupMockLeviLamina();
     setupMockServer();
@@ -59,6 +64,9 @@ void TestEnvironment::cleanup() {
 
     // 清理模拟数据
     LeviLaminaAPI::clearMockPlayers();
+
+    // 重置经济数据
+    resetEconomyData();
 
     m_initialized = false;
     std::cout << "Test environment cleaned up." << std::endl;
@@ -93,6 +101,49 @@ void TestEnvironment::cleanupDefaultLandsFolder() {
         }
     } catch (const std::exception& e) {
         std::cerr << "Warning: Failed to cleanup default lands folder: " << e.what() << std::endl;
+    }
+}
+
+void TestEnvironment::resetEconomyData() {
+    try {
+        // 重置玩家经济数据
+        PlayerEconomyData::resetAllData();
+        std::cout << "Reset all economy data." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Warning: Failed to reset economy data: " << e.what() << std::endl;
+    }
+}
+
+void TestEnvironment::resetAllTestData() {
+    try {
+        std::cout << "Starting comprehensive test data reset..." << std::endl;
+
+        // 1. 重置所有数据服务（土地、城镇等）
+#ifdef TESTING
+        auto dataService = DataService::getInstance();
+        if (dataService) {
+            dataService->clearAllData();
+            std::cout << "Cleared all data service data." << std::endl;
+        }
+#endif
+
+        // 2. 重置经济数据
+        PlayerEconomyData::resetAllData();
+        std::cout << "Reset all economy data." << std::endl;
+
+        // 3. 清理模拟玩家
+        LeviLaminaAPI::clearMockPlayers();
+
+        // 4. 重新添加基础模拟玩家
+        setupMockLeviLamina();
+
+        // 5. 清理文件系统数据
+        cleanupDefaultLandsFolder();
+
+        std::cout << "Comprehensive test data reset completed." << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Warning: Failed to reset all test data: " << e.what() << std::endl;
     }
 }
 

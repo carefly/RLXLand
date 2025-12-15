@@ -1,19 +1,19 @@
 #define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_DISABLE_AUTO_RERUN
 #include "utils/TestEnvironment.h"
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_session.hpp>
 
-// 全局测试固定装置
-struct GlobalTestFixture {
-    GlobalTestFixture() {
-        // 在所有测试开始前执行一次
+// 全局测试环境管理器
+struct TestEnvironmentManager {
+    TestEnvironmentManager() {
         rlx_land::test::TestEnvironment::getInstance().initialize();
     }
 
-    ~GlobalTestFixture() {
-        // 在所有测试结束后执行一次
-        rlx_land::test::TestEnvironment::getInstance().cleanup();
+    ~TestEnvironmentManager() {
+        // 空析构函数，避免任何清理操作
     }
 };
 
-// 创建全局实例，确保在程序启动时初始化，结束时清理
-static GlobalTestFixture g_globalTestFixture;
+// 全局实例
+static TestEnvironmentManager g_envManager;

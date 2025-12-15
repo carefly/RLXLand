@@ -568,3 +568,7 @@ IFLOW.md
 $null 
 
 make.ps1
+
+/RLXModeResources/
+/mysql-to-rlxland/
+.claude/
