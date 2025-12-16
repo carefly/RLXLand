@@ -16,12 +16,17 @@ public:
     /// @return true 表示必须存在，false 表示可选
     static bool requireMoneyPlugin();
 
+    /// @brief 获取配置：是否显示侧边栏
+    /// @return true 表示显示，false 表示不显示
+    static bool showSidebar();
+
     /// @brief 检查 money.dll 是否存在
     /// @return true 表示存在，false 表示不存在
     static bool checkMoneyDllExists();
 
 private:
     static bool s_requireMoneyPlugin;
+    static bool s_showSidebar;
     static bool s_configLoaded;
 
     // DLL 名称硬编码

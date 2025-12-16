@@ -69,9 +69,14 @@ bool RLXLand::enable() const {
     CommonEventHandlers::registerEventListeners();
     CommonEventHandlers::hookAllFunctions();
     
-    // 启用状态显示（侧边栏）
-    RLXStatus::getInstance().load();
-    RLXStatus::getInstance().enable();
+    // 根据配置决定是否启用状态显示（侧边栏）
+    if (ModConfig::showSidebar()) {
+        RLXStatus::getInstance().load();
+        RLXStatus::getInstance().enable();
+        getSelf().getLogger().info("侧边栏已启用");
+    } else {
+        getSelf().getLogger().info("侧边栏已禁用（根据配置）");
+    }
     
     // 启用模组时的日志输出
     getSelf().getLogger().info("RLXLand 模组已启用");

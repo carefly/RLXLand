@@ -15,6 +15,7 @@
 namespace rlx_land {
 
 bool ModConfig::s_requireMoneyPlugin = false; // 默认值：false（可选）
+bool ModConfig::s_showSidebar        = true;  // 默认值：true（显示）
 bool ModConfig::s_configLoaded       = false;
 
 bool ModConfig::load(const std::string& configPath) {
@@ -85,8 +86,15 @@ bool ModConfig::load(const std::string& configPath) {
         needWrite                          = true;
     }
 
+    // 如果 showSidebar 不存在，添加默认值 true
+    if (!json["land"].contains("showSidebar")) {
+        json["land"]["showSidebar"] = true;
+        needWrite                   = true;
+    }
+
     // 读取配置项
     s_requireMoneyPlugin = json["land"]["requireMoneyPlugin"].get<bool>();
+    s_showSidebar        = json["land"]["showSidebar"].get<bool>();
 
     // 如果需要写入（新建或更新），保存配置文件
     if (needWrite) {
@@ -96,7 +104,8 @@ bool ModConfig::load(const std::string& configPath) {
                 outFile << json.dump(4); // 使用 4 空格缩进，格式化输出
                 outFile.close();
                 RLXLand::getInstance().getSelf().getLogger().info(
-                    std::format("Config file saved to {}: requireMoneyPlugin={}", configPath, s_requireMoneyPlugin)
+                    std::format("Config file saved to {}: requireMoneyPlugin={}, showSidebar={}", configPath,
+                                s_requireMoneyPlugin, s_showSidebar)
                 );
             } else {
                 RLXLand::getInstance().getSelf().getLogger().warn(
@@ -110,7 +119,8 @@ bool ModConfig::load(const std::string& configPath) {
         }
     } else {
         RLXLand::getInstance().getSelf().getLogger().info(
-            std::format("Config loaded from {}: requireMoneyPlugin={}", configPath, s_requireMoneyPlugin)
+            std::format("Config loaded from {}: requireMoneyPlugin={}, showSidebar={}", configPath,
+                        s_requireMoneyPlugin, s_showSidebar)
         );
     }
 
@@ -123,6 +133,13 @@ bool ModConfig::requireMoneyPlugin() {
         load(); // 自动加载配置
     }
     return s_requireMoneyPlugin;
+}
+
+bool ModConfig::showSidebar() {
+    if (!s_configLoaded) {
+        load(); // 自动加载配置
+    }
+    return s_showSidebar;
 }
 
 bool ModConfig::checkMoneyDllExists() {
