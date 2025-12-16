@@ -12,7 +12,7 @@
 
 SetScorePacket::SetScorePacket() : mType{} {}
 SetDisplayObjectivePacketPayload::SetDisplayObjectivePacketPayload() : mSortOrder{} {}
-SetDisplayObjectivePacket::SetDisplayObjectivePacket() = default;
+SetDisplayObjectivePacket::SetDisplayObjectivePacket() : mSerializationMode{} {}
 
 #endif
 

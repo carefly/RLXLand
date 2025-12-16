@@ -3,8 +3,8 @@ add_rules("mode.debug", "mode.release")
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
 
 -- 添加 xmake-repo 仓库（包含 RLXMoney 包定义）
--- add_repositories("rlx-repo https://github.com/carefly/xmake-repo.git")
-add_repositories("rlx-repo ../xmake-repo")
+add_repositories("rlx-repo https://github.com/carefly/xmake-repo.git")
+-- add_repositories("rlx-repo ../xmake-repo")
 
 -- 使用 xmake-repo 中的 RLXMoney 包（从 GitHub releases 下载预编译 SDK）
 add_requires("rlxmoney 1.0.1", {configs = {shared = true}})
