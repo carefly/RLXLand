@@ -1,53 +1,48 @@
 #pragma once
 #include "data/core/BaseInformation.h"
-#include <memory>
 #include <cassert>
+#include <memory>
 
 namespace rlx_land {
 
 // 存储模式枚举
-enum class BlockStorageMode {
-    Empty = 0,
-    FullCover = 1,
-    PointArray = 2
-};
+enum class BlockStorageMode { Empty = 0, FullCover = 1, PointArray = 2 };
 
 // BlockEntry: 优化的块级存储结构，使用明确的模式枚举
+// 现在每个 BlockEntry 覆盖 10×10 坐标
 template <typename InfoType>
 struct BlockEntry {
 private:
     union {
-        InfoType* fullCoverInfo;     // 整块填充时的信息指针
-        InfoType** pointArray;       // 点数组模式时的数组指针
+        InfoType*  fullCoverInfo; // 整块填充时的信息指针
+        InfoType** pointArray;    // 点数组模式时的数组指针
     } data;
 
     BlockStorageMode mode;
 
 public:
-    BlockEntry() : mode(BlockStorageMode::Empty) {
-        data.fullCoverInfo = nullptr;
-    }
+    static constexpr int SIZE = 10; // 10×10 坐标
 
-    ~BlockEntry() {
-        clear();
-    }
+    BlockEntry() : mode(BlockStorageMode::Empty) { data.fullCoverInfo = nullptr; }
+
+    ~BlockEntry() { clear(); }
 
     // 禁止拷贝构造和拷贝赋值（避免双重释放）
-    BlockEntry(const BlockEntry&) = delete;
+    BlockEntry(const BlockEntry&)            = delete;
     BlockEntry& operator=(const BlockEntry&) = delete;
 
     // 允许移动构造和移动赋值
     BlockEntry(BlockEntry&& other) noexcept : mode(other.mode), data(other.data) {
-        other.mode = BlockStorageMode::Empty;
+        other.mode               = BlockStorageMode::Empty;
         other.data.fullCoverInfo = nullptr;
     }
 
     BlockEntry& operator=(BlockEntry&& other) noexcept {
         if (this != &other) {
             clear();
-            mode = other.mode;
-            data = other.data;
-            other.mode = BlockStorageMode::Empty;
+            mode                     = other.mode;
+            data                     = other.data;
+            other.mode               = BlockStorageMode::Empty;
             other.data.fullCoverInfo = nullptr;
         }
         return *this;
@@ -59,26 +54,22 @@ public:
     bool isPointArray() const { return mode == BlockStorageMode::PointArray; }
 
     // 获取整块填充的指针
-    InfoType* getFullCover() const {
-        return (mode == BlockStorageMode::FullCover) ? data.fullCoverInfo : nullptr;
-    }
+    InfoType* getFullCover() const { return (mode == BlockStorageMode::FullCover) ? data.fullCoverInfo : nullptr; }
 
     // 获取点数组指针
-    InfoType** getPointArray() const {
-        return (mode == BlockStorageMode::PointArray) ? data.pointArray : nullptr;
-    }
+    InfoType** getPointArray() const { return (mode == BlockStorageMode::PointArray) ? data.pointArray : nullptr; }
 
     // 设置整块填充（安全：会先清理现有数据）
     void setFullCover(InfoType* info) {
         clear();
-        mode = BlockStorageMode::FullCover;
+        mode               = BlockStorageMode::FullCover;
         data.fullCoverInfo = info;
     }
 
     // 设置点数组（安全：会先清理现有数据）
     void setPointArray(InfoType** arr) {
         clear();
-        mode = BlockStorageMode::PointArray;
+        mode            = BlockStorageMode::PointArray;
         data.pointArray = arr;
     }
 
@@ -87,26 +78,28 @@ public:
         if (mode == BlockStorageMode::PointArray && data.pointArray != nullptr) {
             delete[] data.pointArray;
         }
-        mode = BlockStorageMode::Empty;
+        mode               = BlockStorageMode::Empty;
         data.fullCoverInfo = nullptr;
     }
 
     // 检查指针有效性（调试用）
     bool isValid() const {
         switch (mode) {
-            case BlockStorageMode::Empty:
-                return data.fullCoverInfo == nullptr;
-            case BlockStorageMode::FullCover:
-                return data.fullCoverInfo != nullptr;
-            case BlockStorageMode::PointArray:
-                return data.pointArray != nullptr;
-            default:
-                return false;
+        case BlockStorageMode::Empty:
+            return data.fullCoverInfo == nullptr;
+        case BlockStorageMode::FullCover:
+            return data.fullCoverInfo != nullptr;
+        case BlockStorageMode::PointArray:
+            return data.pointArray != nullptr;
+        default:
+            return false;
         }
     }
 };
 
 // 前向声明
+template <typename InfoType>
+class SmallMap;
 template <typename InfoType>
 class MiddleMap;
 template <typename InfoType>
@@ -118,6 +111,7 @@ class SpatialMap {
 private:
     // 只有 DataService 可以访问 SpatialMap 的公共接口
     friend class DataService;
+    friend class SmallMap<InfoType>;
     friend class MiddleMap<InfoType>;
     friend class BigMap<InfoType>;
 
@@ -134,29 +128,55 @@ private:
     BigMap<InfoType>* map[20][20][3] = {};
 };
 
-// MiddleMap 使用 BlockEntry 实现块级填充存储
-// 每个 Block (100×100 坐标) 支持整块填充模式或点数组模式
+// SmallMap: 持有 10×10 个 BlockEntry（固定分配）
+// 每个 SmallMap 覆盖 100×100 坐标
+template <typename InfoType>
+class SmallMap {
+public:
+    SmallMap();
+    ~SmallMap();
+
+    // 查询接口：ix, iz 是 [0, 99] 的坐标
+    InfoType* getInfo(int ix, int iz);
+
+    // 设置接口
+    void setInfo(int ix, int iz, InfoType* info);
+    void setBlockFullCover(int bx, int bz, InfoType* info); // 设置整个 BlockEntry 填充
+
+    // 范围设置（优化用）：x1, z1, x2, z2 是 [0, 99] 的坐标
+    void setRange(int x1, int z1, int x2, int z2, InfoType* info);
+
+private:
+    static constexpr int GRID_SIZE  = 10;  // 10×10 个 BlockEntry
+    static constexpr int BLOCK_SIZE = 10;  // 每个 BlockEntry 10×10 坐标
+    static constexpr int TOTAL_SIZE = 100; // SmallMap 总共覆盖 100×100 坐标
+
+    BlockEntry<InfoType> blocks[GRID_SIZE * GRID_SIZE]; // 固定分配 100 个 BlockEntry
+};
+
+// MiddleMap: 持有 100×100 个 SmallMap 指针（按需分配）
+// 每个 MiddleMap 覆盖 10,000×10,000 坐标
 template <typename InfoType>
 class MiddleMap {
 public:
     MiddleMap();
     ~MiddleMap();
 
-    // 查询接口
-    InfoType* getInfo(int sx, int sz, int ix, int iz);
+    // 查询接口：ix, iz 是 [0, 9999] 的坐标
+    InfoType* getInfo(int ix, int iz);
 
     // 设置接口
-    void setInfo(int sx, int sz, int ix, int iz, InfoType* info);
-    void setBlockFullCover(int sx, int sz, InfoType* info); // 设置整块填充
+    void setInfo(int ix, int iz, InfoType* info);
 
-    // 范围设置（优化用）
+    // 范围设置（优化用）：x1, z1, x2, z2 是 [0, 9999] 的坐标
     void setRange(int x1, int z1, int x2, int z2, InfoType* info);
 
 private:
-    static constexpr int SIZE       = 100; // 100×100 个 Block
-    static constexpr int BLOCK_SIZE = 100; // 每个 Block 100×100 坐标
+    static constexpr int SIZE       = 100;   // 100×100 个 SmallMap
+    static constexpr int SMALL_SIZE = 100;   // 每个 SmallMap 100×100 坐标
+    static constexpr int TOTAL_SIZE = 10000; // MiddleMap 总共覆盖 10,000×10,000 坐标
 
-    BlockEntry<InfoType>* blocks; // BlockEntry[100×100]
+    SmallMap<InfoType>** smallMaps; // SmallMap*[100×100]，按需分配
 };
 
 template <typename InfoType>
@@ -168,33 +188,34 @@ public:
     ~BigMap();
 
     int x, z, d;
-    int size = 10;
+    int size = 10; // 10×10 个 MiddleMap
 
 private:
-    MiddleMap<InfoType>** map;
+    MiddleMap<InfoType>** map; // MiddleMap*[10×10]
 };
 
-// MiddleMap 实现
+// ================ SmallMap 实现 ================
+
 template <typename InfoType>
-MiddleMap<InfoType>::MiddleMap() {
-    blocks = new BlockEntry<InfoType>[SIZE * SIZE];
-    // BlockEntry 默认构造函数会将 data 初始化为 0
+SmallMap<InfoType>::SmallMap() {
+    // BlockEntry 数组已固定分配，默认构造函数会初始化为 Empty 模式
 }
 
 template <typename InfoType>
-MiddleMap<InfoType>::~MiddleMap() {
+SmallMap<InfoType>::~SmallMap() {
     // BlockEntry 数组的析构函数会自动调用每个元素的析构函数
-    // 这确保了所有点数组都能被安全释放
-    delete[] blocks;
 }
 
 template <typename InfoType>
-InfoType* MiddleMap<InfoType>::getInfo(int sx, int sz, int ix, int iz) {
-    // 边界检查
-    if (sx < 0 || sx >= SIZE || sz < 0 || sz >= SIZE) return nullptr;
-    if (ix < 0 || ix >= BLOCK_SIZE || iz < 0 || iz >= BLOCK_SIZE) return nullptr;
+InfoType* SmallMap<InfoType>::getInfo(int ix, int iz) {
+    // 边界检查：ix, iz 应该在 [0, 99] 范围内
+    if (ix < 0 || ix >= TOTAL_SIZE || iz < 0 || iz >= TOTAL_SIZE) return nullptr;
 
-    int                   idx   = sx + sz * SIZE;
+    // 计算所属的 BlockEntry
+    int bx  = ix / BLOCK_SIZE;
+    int bz  = iz / BLOCK_SIZE;
+    int idx = bx + bz * GRID_SIZE;
+
     BlockEntry<InfoType>& block = blocks[idx];
 
     // 调试断言：确保 BlockEntry 处于有效状态
@@ -211,15 +232,19 @@ InfoType* MiddleMap<InfoType>::getInfo(int sx, int sz, int ix, int iz) {
         return nullptr;
     }
 
-    return arr[ix + iz * BLOCK_SIZE];
+    // 计算 Block 内的局部坐标
+    int localX = ix % BLOCK_SIZE;
+    int localZ = iz % BLOCK_SIZE;
+
+    return arr[localX + localZ * BLOCK_SIZE];
 }
 
 template <typename InfoType>
-void MiddleMap<InfoType>::setBlockFullCover(int sx, int sz, InfoType* info) {
-    // 边界检查
-    if (sx < 0 || sx >= SIZE || sz < 0 || sz >= SIZE) return;
+void SmallMap<InfoType>::setBlockFullCover(int bx, int bz, InfoType* info) {
+    // 边界检查：bx, bz 应该在 [0, 9] 范围内
+    if (bx < 0 || bx >= GRID_SIZE || bz < 0 || bz >= GRID_SIZE) return;
 
-    int                   idx   = sx + sz * SIZE;
+    int                   idx   = bx + bz * GRID_SIZE;
     BlockEntry<InfoType>& block = blocks[idx];
 
     // 使用 BlockEntry 的安全设置方法，会自动清理现有数据
@@ -227,12 +252,15 @@ void MiddleMap<InfoType>::setBlockFullCover(int sx, int sz, InfoType* info) {
 }
 
 template <typename InfoType>
-void MiddleMap<InfoType>::setInfo(int sx, int sz, int ix, int iz, InfoType* info) {
-    // 边界检查
-    if (sx < 0 || sx >= SIZE || sz < 0 || sz >= SIZE) return;
-    if (ix < 0 || ix >= BLOCK_SIZE || iz < 0 || iz >= BLOCK_SIZE) return;
+void SmallMap<InfoType>::setInfo(int ix, int iz, InfoType* info) {
+    // 边界检查：ix, iz 应该在 [0, 99] 范围内
+    if (ix < 0 || ix >= TOTAL_SIZE || iz < 0 || iz >= TOTAL_SIZE) return;
 
-    int                   idx   = sx + sz * SIZE;
+    // 计算所属的 BlockEntry
+    int bx  = ix / BLOCK_SIZE;
+    int bz  = iz / BLOCK_SIZE;
+    int idx = bx + bz * GRID_SIZE;
+
     BlockEntry<InfoType>& block = blocks[idx];
 
     // 如果当前是整块填充，需要展开为点数组
@@ -240,21 +268,16 @@ void MiddleMap<InfoType>::setInfo(int sx, int sz, int ix, int iz, InfoType* info
         InfoType*  oldInfo = block.getFullCover();
         InfoType** arr     = new InfoType*[BLOCK_SIZE * BLOCK_SIZE];
 
-        // 安全地初始化点数组：用原来的值填充所有点
-        // 注意：这里存储的是相同的指针，但这是安全的，因为：
-        // 1. InfoType 对象的生命周期由外部管理
-        // 2. 我们不负责释放 InfoType 对象，只释放数组本身
+        // 用原来的值填充所有点
         for (int i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i++) {
             arr[i] = oldInfo;
         }
 
-        // 使用安全的方法设置点数组
         block.setPointArray(arr);
     }
 
     // 确保点数组存在
-    if (block.isEmpty() || block.isFullCover()) {
-        // 这种情况理论上不应该发生，但为了安全起见
+    if (block.isEmpty()) {
         InfoType** arr = new InfoType*[BLOCK_SIZE * BLOCK_SIZE];
         for (int i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i++) {
             arr[i] = nullptr;
@@ -265,25 +288,27 @@ void MiddleMap<InfoType>::setInfo(int sx, int sz, int ix, int iz, InfoType* info
     // 设置指定位置的值
     InfoType** arr = block.getPointArray();
     if (arr != nullptr) {
-        arr[ix + iz * BLOCK_SIZE] = info;
+        int localX                        = ix % BLOCK_SIZE;
+        int localZ                        = iz % BLOCK_SIZE;
+        arr[localX + localZ * BLOCK_SIZE] = info;
     }
 }
 
 template <typename InfoType>
-void MiddleMap<InfoType>::setRange(int x1, int z1, int x2, int z2, InfoType* info) {
+void SmallMap<InfoType>::setRange(int x1, int z1, int x2, int z2, InfoType* info) {
     // 边界检查
     if (x1 < 0) x1 = 0;
     if (z1 < 0) z1 = 0;
-    if (x2 >= SIZE * BLOCK_SIZE) x2 = SIZE * BLOCK_SIZE - 1;
-    if (z2 >= SIZE * BLOCK_SIZE) z2 = SIZE * BLOCK_SIZE - 1;
+    if (x2 >= TOTAL_SIZE) x2 = TOTAL_SIZE - 1;
+    if (z2 >= TOTAL_SIZE) z2 = TOTAL_SIZE - 1;
 
-    // 计算 Block 范围
+    // 计算 BlockEntry 范围
     int bx1 = x1 / BLOCK_SIZE;
     int bz1 = z1 / BLOCK_SIZE;
     int bx2 = x2 / BLOCK_SIZE;
     int bz2 = z2 / BLOCK_SIZE;
 
-    // 遍历所有涉及的 Block
+    // 遍历所有涉及的 BlockEntry
     for (int bx = bx1; bx <= bx2; bx++) {
         for (int bz = bz1; bz <= bz2; bz++) {
             // 计算当前 Block 内的坐标范围
@@ -302,7 +327,9 @@ void MiddleMap<InfoType>::setRange(int x1, int z1, int x2, int z2, InfoType* inf
                 // 部分覆盖，需要逐点设置
                 for (int x = localX1; x <= localX2; x++) {
                     for (int z = localZ1; z <= localZ2; z++) {
-                        setInfo(bx, bz, x, z, info);
+                        int globalX = bx * BLOCK_SIZE + x;
+                        int globalZ = bz * BLOCK_SIZE + z;
+                        setInfo(globalX, globalZ, info);
                     }
                 }
             }
@@ -310,7 +337,112 @@ void MiddleMap<InfoType>::setRange(int x1, int z1, int x2, int z2, InfoType* inf
     }
 }
 
-// BigMap 实现
+// ================ MiddleMap 实现 ================
+
+template <typename InfoType>
+MiddleMap<InfoType>::MiddleMap() {
+    smallMaps = new SmallMap<InfoType>*[SIZE * SIZE];
+    for (int i = 0; i < SIZE * SIZE; i++) {
+        smallMaps[i] = nullptr;
+    }
+}
+
+template <typename InfoType>
+MiddleMap<InfoType>::~MiddleMap() {
+    for (int i = 0; i < SIZE * SIZE; i++) {
+        if (smallMaps[i] != nullptr) {
+            delete smallMaps[i];
+            smallMaps[i] = nullptr;
+        }
+    }
+    delete[] smallMaps;
+}
+
+template <typename InfoType>
+InfoType* MiddleMap<InfoType>::getInfo(int ix, int iz) {
+    // 边界检查：ix, iz 应该在 [0, 9999] 范围内
+    if (ix < 0 || ix >= TOTAL_SIZE || iz < 0 || iz >= TOTAL_SIZE) return nullptr;
+
+    // 计算所属的 SmallMap
+    int sx  = ix / SMALL_SIZE;
+    int sz  = iz / SMALL_SIZE;
+    int idx = sx + sz * SIZE;
+
+    SmallMap<InfoType>* smallMap = smallMaps[idx];
+    if (smallMap == nullptr) {
+        return nullptr;
+    }
+
+    // 计算 SmallMap 内的局部坐标
+    int localX = ix % SMALL_SIZE;
+    int localZ = iz % SMALL_SIZE;
+
+    return smallMap->getInfo(localX, localZ);
+}
+
+template <typename InfoType>
+void MiddleMap<InfoType>::setInfo(int ix, int iz, InfoType* info) {
+    // 边界检查：ix, iz 应该在 [0, 9999] 范围内
+    if (ix < 0 || ix >= TOTAL_SIZE || iz < 0 || iz >= TOTAL_SIZE) return;
+
+    // 计算所属的 SmallMap
+    int sx  = ix / SMALL_SIZE;
+    int sz  = iz / SMALL_SIZE;
+    int idx = sx + sz * SIZE;
+
+    SmallMap<InfoType>* smallMap = smallMaps[idx];
+    if (smallMap == nullptr) {
+        smallMap       = new SmallMap<InfoType>();
+        smallMaps[idx] = smallMap;
+    }
+
+    // 计算 SmallMap 内的局部坐标
+    int localX = ix % SMALL_SIZE;
+    int localZ = iz % SMALL_SIZE;
+
+    smallMap->setInfo(localX, localZ, info);
+}
+
+template <typename InfoType>
+void MiddleMap<InfoType>::setRange(int x1, int z1, int x2, int z2, InfoType* info) {
+    // 边界检查
+    if (x1 < 0) x1 = 0;
+    if (z1 < 0) z1 = 0;
+    if (x2 >= TOTAL_SIZE) x2 = TOTAL_SIZE - 1;
+    if (z2 >= TOTAL_SIZE) z2 = TOTAL_SIZE - 1;
+
+    // 计算 SmallMap 范围
+    int sx1 = x1 / SMALL_SIZE;
+    int sz1 = z1 / SMALL_SIZE;
+    int sx2 = x2 / SMALL_SIZE;
+    int sz2 = z2 / SMALL_SIZE;
+
+    // 遍历所有涉及的 SmallMap
+    for (int sx = sx1; sx <= sx2; sx++) {
+        for (int sz = sz1; sz <= sz2; sz++) {
+            int idx = sx + sz * SIZE;
+
+            // 按需创建 SmallMap
+            SmallMap<InfoType>* smallMap = smallMaps[idx];
+            if (smallMap == nullptr) {
+                smallMap       = new SmallMap<InfoType>();
+                smallMaps[idx] = smallMap;
+            }
+
+            // 计算当前 SmallMap 内的坐标范围
+            int localX1 = (sx == sx1) ? (x1 % SMALL_SIZE) : 0;
+            int localZ1 = (sz == sz1) ? (z1 % SMALL_SIZE) : 0;
+            int localX2 = (sx == sx2) ? (x2 % SMALL_SIZE) : (SMALL_SIZE - 1);
+            int localZ2 = (sz == sz2) ? (z2 % SMALL_SIZE) : (SMALL_SIZE - 1);
+
+            // 调用 SmallMap 的范围设置
+            smallMap->setRange(localX1, localZ1, localX2, localZ2, info);
+        }
+    }
+}
+
+// ================ BigMap 实现 ================
+
 template <typename InfoType>
 BigMap<InfoType>::BigMap(int x, int z, int d) : x(x),
                                                 z(z),
@@ -335,31 +467,32 @@ MiddleMap<InfoType>* BigMap<InfoType>::getMap(int mx, int mz) {
 
 template <typename InfoType>
 BigMap<InfoType>::~BigMap() {
-    // 注意：不删除 MiddleMap 对象中的 InfoType 对象
-    // 只清理 MiddleMap 对象本身
     for (int i = 0; i < size * size; i++) {
         if (map[i] != nullptr) {
-            delete map[i]; // 删除 MiddleMap 对象
+            delete map[i];
             map[i] = nullptr;
         }
     }
     delete[] map;
 }
 
-// SpatialMap 实现
+// ================ SpatialMap 实现 ================
+
 template <typename InfoType>
 InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
     // 添加维度边界检查
     if (d < 0 || d >= 3) return nullptr;
 
     // 坐标范围 [-1000000, 999999] 映射到 [0, 19] 的数组索引
-    // bigx = floor((coordx + 1000000) / 100000)
     int bigx = (int)((coordx + 100000 * 10) / 100000);
     int bigz = (int)((coordz + 100000 * 10) / 100000);
 
     if (bigx >= 20 || bigx < 0 || bigz >= 20 || bigz < 0) return nullptr;
 
-    // 计算当前 BigMap 的基础坐标（与 setRange 保持一致）
+    BigMap<InfoType>* bigMap = this->map[bigx][bigz][d];
+    if (bigMap == nullptr) return nullptr;
+
+    // 计算当前 BigMap 的基础坐标
     LONG64 bigBaseX = (LONG64)(bigx - 10) * 100000;
     LONG64 bigBaseZ = (LONG64)(bigz - 10) * 100000;
 
@@ -367,37 +500,23 @@ InfoType* SpatialMap<InfoType>::find(LONG64 coordx, LONG64 coordz, int d) {
     LONG64 x = coordx - bigBaseX;
     LONG64 z = coordz - bigBaseZ;
 
-    BigMap<InfoType>* bigMap = this->map[bigx][bigz][d];
-    if (bigMap == nullptr) return nullptr;
-
+    // 计算所属的 MiddleMap (10×10)
     int middlex = (int)(x / 10000);
     int middlez = (int)(z / 10000);
 
-    // 边界检查：BigMap 的 size 是 10，所以 middlex 和 middlez 应该在 [0, 9] 范围内
     if (middlex >= 10 || middlex < 0 || middlez >= 10 || middlez < 0) return nullptr;
-
-    x = x - middlex * 10000;
-    z = z - middlez * 10000;
 
     MiddleMap<InfoType>* middleMap = bigMap->getMap(middlex, middlez);
     if (middleMap == nullptr) return nullptr;
 
-    int smallx = (int)(x / 100);
-    int smallz = (int)(z / 100);
+    // 计算 MiddleMap 内的局部坐标
+    int localX = (int)(x - middlex * 10000);
+    int localZ = (int)(z - middlez * 10000);
 
-    // 边界检查：MiddleMap 的 SIZE 是 100，所以 smallx 和 smallz 应该在 [0, 99] 范围内
-    if (smallx >= 100 || smallx < 0 || smallz >= 100 || smallz < 0) return nullptr;
-
-    x = x - smallx * 100;
-    z = z - smallz * 100;
-
-    // 边界检查：BLOCK_SIZE 是 100，所以 ix 和 iz 应该在 [0, 99] 范围内
-    int ix = (int)x;
-    int iz = (int)z;
-    if (ix >= 100 || ix < 0 || iz >= 100 || iz < 0) return nullptr;
+    if (localX >= 10000 || localX < 0 || localZ >= 10000 || localZ < 0) return nullptr;
 
     // 直接从 MiddleMap 获取 InfoType
-    return middleMap->getInfo(smallx, smallz, ix, iz);
+    return middleMap->getInfo(localX, localZ);
 }
 
 template <typename InfoType>
@@ -406,19 +525,10 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
     if (d < 0 || d >= 3) return;
 
     // 坐标范围 [-1000000, 999999] 映射到 [0, 19] 的数组索引
-    // bigx = floor((xi + 1000000) / 100000)
     int bigx = (int)((xi + 100000 * 10) / 100000);
     int bigz = (int)((zi + 100000 * 10) / 100000);
 
     if (bigx >= 20 || bigx < 0 || bigz >= 20 || bigz < 0) return;
-
-    // 计算当前 BigMap 的基础坐标（与 setRange 保持一致）
-    LONG64 bigBaseX = (LONG64)(bigx - 10) * 100000;
-    LONG64 bigBaseZ = (LONG64)(bigz - 10) * 100000;
-
-    // 计算 BigMap 内的局部坐标
-    LONG64 x = xi - bigBaseX;
-    LONG64 z = zi - bigBaseZ;
 
     BigMap<InfoType>* bigMap = this->map[bigx][bigz][d];
     if (bigMap == nullptr) {
@@ -426,14 +536,19 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
         this->map[bigx][bigz][d] = bigMap;
     }
 
+    // 计算当前 BigMap 的基础坐标
+    LONG64 bigBaseX = (LONG64)(bigx - 10) * 100000;
+    LONG64 bigBaseZ = (LONG64)(bigz - 10) * 100000;
+
+    // 计算 BigMap 内的局部坐标
+    LONG64 x = xi - bigBaseX;
+    LONG64 z = zi - bigBaseZ;
+
+    // 计算所属的 MiddleMap (10×10)
     int middlex = (int)(x / 10000);
     int middlez = (int)(z / 10000);
 
-    // 边界检查：BigMap 的 size 是 10，所以 middlex 和 middlez 应该在 [0, 9] 范围内
     if (middlex >= 10 || middlex < 0 || middlez >= 10 || middlez < 0) return;
-
-    x = x - middlex * 10000;
-    z = z - middlez * 10000;
 
     MiddleMap<InfoType>* middleMap = bigMap->getMap(middlex, middlez);
     if (middleMap == nullptr) {
@@ -441,22 +556,14 @@ void SpatialMap<InfoType>::set(InfoType* info, LONG64 xi, LONG64 zi, int d) {
         bigMap->setMap(middlex, middlez, middleMap);
     }
 
-    int smallx = (int)(x / 100);
-    int smallz = (int)(z / 100);
+    // 计算 MiddleMap 内的局部坐标
+    int localX = (int)(x - middlex * 10000);
+    int localZ = (int)(z - middlez * 10000);
 
-    // 边界检查：MiddleMap 的 SIZE 是 100，所以 smallx 和 smallz 应该在 [0, 99] 范围内
-    if (smallx >= 100 || smallx < 0 || smallz >= 100 || smallz < 0) return;
-
-    x = x - smallx * 100;
-    z = z - smallz * 100;
-
-    // 边界检查：BLOCK_SIZE 是 100，所以 ix 和 iz 应该在 [0, 99] 范围内
-    int ix = (int)x;
-    int iz = (int)z;
-    if (ix >= 100 || ix < 0 || iz >= 100 || iz < 0) return;
+    if (localX >= 10000 || localX < 0 || localZ >= 10000 || localZ < 0) return;
 
     // 直接在 MiddleMap 中设置 InfoType
-    middleMap->setInfo(smallx, smallz, ix, iz, info);
+    middleMap->setInfo(localX, localZ, info);
 }
 
 template <typename InfoType>

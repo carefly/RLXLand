@@ -85,7 +85,7 @@ void TestEnvironment::setupMockServer() {
 
 void TestEnvironment::cleanupDefaultLandsFolder() {
     // 清理默认的lands文件夹数据
-    std::string landsDir = "RLXModeResources/data/lands";
+    std::string landsDir = "plugins/RLXModeResources/data/lands";
 
     try {
         if (std::filesystem::exists(landsDir)) {

@@ -15,8 +15,8 @@ namespace rlx_land::test {
 
 // JSON文件验证辅助函数
 namespace JsonTestUtils {
-// 获取领地JSON文件的基础路径
-std::string getLandsBaseDir() { return "RLXModeResources/data/lands"; }
+// 获取领地JSON文件的基础路径（与 PathConfig 保持一致）
+std::string getLandsBaseDir() { return "plugins/RLXModeResources/data/lands"; }
 
 // 生成玩家文件名
 std::string generatePlayerFileName(const std::string& xuid, const std::string& playerName) {
