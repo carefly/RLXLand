@@ -64,29 +64,29 @@ bool ModConfig::load(const std::string& configPath) {
         );
     }
 
-    // 确保 money 配置对象存在
-    if (!json.contains("money")) {
-        // money 不存在，创建它
-        json["money"] = nlohmann::json::object();
-        needWrite     = true;
-    } else if (!json["money"].is_object()) {
-        // money 存在但不是对象，转换为对象
+    // 确保 land 配置对象存在
+    if (!json.contains("land")) {
+        // land 不存在，创建它
+        json["land"] = nlohmann::json::object();
+        needWrite    = true;
+    } else if (!json["land"].is_object()) {
+        // land 存在但不是对象，转换为对象
         RLXLand::getInstance().getSelf().getLogger().warn(std::format(
-            "Config file {} has 'money' field but it's not an object, converting it to an object",
+            "Config file {} has 'land' field but it's not an object, converting it to an object",
             configPath
         ));
-        json["money"] = nlohmann::json::object();
-        needWrite     = true;
+        json["land"] = nlohmann::json::object();
+        needWrite    = true;
     }
 
-    // 如果 requireMoneyPlugin 不存在，添加默认值 false
-    if (!json["money"].contains("requireMoneyPlugin")) {
-        json["money"]["requireMoneyPlugin"] = false;
-        needWrite                           = true;
+    // 如果 requireMoneyPlugin 不存在，添加默认值 true
+    if (!json["land"].contains("requireMoneyPlugin")) {
+        json["land"]["requireMoneyPlugin"] = true;
+        needWrite                          = true;
     }
 
     // 读取配置项
-    s_requireMoneyPlugin = json["money"]["requireMoneyPlugin"].get<bool>();
+    s_requireMoneyPlugin = json["land"]["requireMoneyPlugin"].get<bool>();
 
     // 如果需要写入（新建或更新），保存配置文件
     if (needWrite) {

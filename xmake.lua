@@ -1,18 +1,25 @@
 add_rules("mode.debug", "mode.release")
 
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
+
+-- 添加 xmake-repo 仓库（包含 RLXMoney 包定义）
+-- add_repositories("rlx-repo https://github.com/carefly/xmake-repo.git")
+add_repositories("rlx-repo ../xmake-repo")
+
+-- 使用 xmake-repo 中的 RLXMoney 包（从 GitHub releases 下载预编译 SDK）
+add_requires("rlxmoney 1.0.1", {configs = {shared = true}})
+
 -- 本地私有包仓库，提供 rlxmoney
 -- add_repositories("local-packages packages")
 
 if is_config("target_type", "server") then
-    add_requires("levilamina 1.7.0", {configs = {target_type = "server"}})
+    add_requires("levilamina 1.7.7", {configs = {target_type = "server"}})
 else
-    add_requires("levilamina 1.7.0", {configs = {target_type = "client"}})
+    add_requires("levilamina 1.7.7", {configs = {target_type = "client"}})
 end
 
 add_requires("levibuildscript")
 add_requires("nlohmann_json")
--- RLXMoney 仅使用本地 release 库（plugins/RLXMoney/ 下的 DLL/Lib）
 
 if not has_config("vs_runtime") then
     set_runtimes("MD")
@@ -43,6 +50,7 @@ target("RLXLand") -- Change this to your mod name.
     add_defines("NOMINMAX", "UNICODE")
     add_packages("levilamina")
     add_packages("nlohmann_json")
+    add_packages("rlxmoney")
     set_exceptions("none") -- To avoid conflicts with /EHa.
     set_kind("shared")
     set_languages("c++20")
@@ -50,31 +58,7 @@ target("RLXLand") -- Change this to your mod name.
     add_headerfiles("src/**.h")
     add_files("src/**.cpp")
     add_includedirs("src")
-
-    -- RLXMoney 依赖：仅使用 plugins/RLXMoney 下的 release 库
-    local rlxmoney_dir = path.join(os.projectdir(), "plugins", "RLXMoney")
-    local rlxmoney_lib = path.join(rlxmoney_dir, "RLXMoney.lib")
-    local rlxmoney_dll = path.join(rlxmoney_dir, "RLXMoney.dll")
-    -- 必须存在 release 库，否则直接报错（防止链接阶段才发现）
-    if not os.exists(rlxmoney_lib) then
-        raise("RLXMoney.lib not found at %s. 请放置 release 版 RLXMoney.lib/.dll 后再构建。", rlxmoney_lib)
-    end
-    add_linkdirs(rlxmoney_dir)
-    add_links("RLXMoney")
     add_defines("RLX_MONEY_ENABLED")
-    -- 打包时拷贝 DLL，方便运行环境直接使用
-    if os.exists(rlxmoney_dll) then
-        add_installfiles(rlxmoney_dll, {prefixdir = "plugins/RLXMoney"})
-    else
-        print("warning: RLXMoney.dll not found, link succeeded but runtime may fail")
-    end
-    -- if is_config("target_type", "server") then
-    --     add_includedirs("src-server")
-    --     add_files("src-server/**.cpp")
-    -- else
-    --     add_includedirs("src-client")
-    --     add_files("src-client/**.cpp")
-    -- end
 
 -- 新增测试目标
 if has_config("tests") then
@@ -100,9 +84,7 @@ if has_config("tests") then
         add_files("src/data/service/DataService.cpp")
         add_files("src/common/JsonLoader.cpp")
         add_files("src/common/PathConfig.cpp")  -- 添加PathConfig实现
-        add_files("src/data/core/PlayerEconomyData.cpp")  -- 添加PlayerEconomyData实现
-        add_files("src/data/economy/EconomyDataManager.cpp")  -- 添加EconomyDataManager实现
-        add_files("src/service/EconomyService.cpp")  -- 添加EconomyService实现
+        -- 注意：测试中不包含经济相关文件（PlayerEconomyData, EconomyDataManager, EconomyService）
         add_files("tests/overrides/mod/RLXLand.cpp")  -- 添加 RLXLand 覆盖实现
         add_files("src/mod/town/permissions/TownPermissionChecker.cpp")  -- 添加权限检查器实现
         

@@ -1,11 +1,12 @@
 #include "PlayerEconomyData.h"
 #include "common/ModConfig.h"
-#include "mod/data/RLXMoneyAPI.h"
 #include "service/EconomyConfig.h"
+#include <RLXMoney/api/RLXMoneyAPI.h>
 #include <exception>
 #include <format>
 #include <stdexcept>
 #include <unordered_map>
+
 
 namespace rlx_land {
 

@@ -1,6 +1,5 @@
 #include "TestEnvironment.h"
 #include "common/Utf8Utils.h"
-#include "data/core/PlayerEconomyData.h"
 #include "data/service/DataService.h"
 #include "overrides/common/LeviLaminaAPI.h"
 #include <filesystem>
@@ -37,9 +36,6 @@ void TestEnvironment::initialize() {
     // 清理默认lands文件夹数据
     cleanupDefaultLandsFolder();
 
-    // 重置经济数据
-    resetEconomyData();
-
     // 设置模拟环境
     setupMockLeviLamina();
     setupMockServer();
@@ -64,9 +60,6 @@ void TestEnvironment::cleanup() {
 
     // 清理模拟数据
     LeviLaminaAPI::clearMockPlayers();
-
-    // 重置经济数据
-    resetEconomyData();
 
     m_initialized = false;
     std::cout << "Test environment cleaned up." << std::endl;
@@ -104,15 +97,6 @@ void TestEnvironment::cleanupDefaultLandsFolder() {
     }
 }
 
-void TestEnvironment::resetEconomyData() {
-    try {
-        // 重置玩家经济数据
-        PlayerEconomyData::resetAllData();
-        std::cout << "Reset all economy data." << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Warning: Failed to reset economy data: " << e.what() << std::endl;
-    }
-}
 
 void TestEnvironment::resetAllTestData() {
     try {
@@ -127,17 +111,13 @@ void TestEnvironment::resetAllTestData() {
         }
 #endif
 
-        // 2. 重置经济数据
-        PlayerEconomyData::resetAllData();
-        std::cout << "Reset all economy data." << std::endl;
-
-        // 3. 清理模拟玩家
+        // 2. 清理模拟玩家
         LeviLaminaAPI::clearMockPlayers();
 
-        // 4. 重新添加基础模拟玩家
+        // 3. 重新添加基础模拟玩家
         setupMockLeviLamina();
 
-        // 5. 清理文件系统数据
+        // 4. 清理文件系统数据
         cleanupDefaultLandsFolder();
 
         std::cout << "Comprehensive test data reset completed." << std::endl;

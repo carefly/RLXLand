@@ -11,3 +11,8 @@ CompileFlags:
     - "-ferror-limit=0"
     - '-D__FUNCTION__="dummy"'
     - '-D__clangd__'
+    - "-Isrc"
+    - "-DRLX_MONEY_ENABLED"
+    - "-DNOMINMAX"
+    - "-DUNICODE"
+    - "-std=c++20"

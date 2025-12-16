@@ -8,9 +8,9 @@
 
 namespace rlx_land {
 
-std::string EconomyDataManager::getEconomyDataDir() { return "RLXModeResources/data/economy"; }
+std::string EconomyDataManager::getEconomyDataDir() { return "plugins/RLXModeResources/data/economy"; }
 
-std::string EconomyDataManager::getEconomyDataFile() { return "RLXModeResources/data/economy/economy.json"; }
+std::string EconomyDataManager::getEconomyDataFile() { return "plugins/RLXModeResources/data/economy/economy.json"; }
 
 void EconomyDataManager::ensureDirectoryExists(const std::string& dirPath) {
     try {
