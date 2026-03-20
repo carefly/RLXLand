@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -37,6 +38,9 @@ public:
     // 获取玩家金钱
     static int getPlayerMoney(const std::string& xuid);
 
+    // 尝试获取玩家金钱（返回 std::optional，获取失败时返回 nullopt）
+    static std::optional<int> tryGetPlayerMoney(const std::string& xuid);
+
     // 检查 money DLL 是否可用
     static bool isMoneyDllAvailable();
 
@@ -44,6 +48,12 @@ public:
     static void resetAllData();
 
 private:
+    // 确保默认币种ID已初始化，返回是否成功
+    static bool ensureCurrencyId();
+
+    // 更新本地缓存余额，返回是否成功
+    static bool updateLocalCache(const std::string& xuid);
+
     // 默认币种ID（从 RLXMoney DLL 获取）
     static std::string defaultCurrencyId;
 

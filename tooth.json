@@ -2,7 +2,7 @@
     "format_version": 3,
     "format_uuid": "289f771f-2c9a-4d73-9f3f-8492495a924d",
     "tooth": "github.com/carefly/RLXLand",
-    "version": "1.7.7",
+    "version": "1.9.8",
     "info": {
         "name": "RLXLand",
         "description": "一个基于 LeviLamina 的土地和城镇管理系统模组，提供完整的领地管理、权限控制和城镇功能",
@@ -17,13 +17,13 @@
             "label": "",
             "platform": "win-x64",
             "dependencies": {
-                "github.com/LiteLDev/LeviLamina": "1.7.7"
+                "github.com/LiteLDev/LeviLamina": "1.9.8"
             },
             "assets": [
                 {
                     "type": "zip",
                     "urls": [
-                        "https://github.com/carefly/RLXLand/releases/download/v1.7.7/RLXLand-windows-x64.zip"
+                        "https://github.com/carefly/RLXLand/releases/download/v1.9.8/RLXLand-windows-x64.zip"
                     ],
                     "placements": [
                         {

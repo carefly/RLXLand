@@ -115,8 +115,25 @@ std::map<std::string, std::vector<LandData>> JsonLoader::groupLandsByOwner(const
 std::string JsonLoader::getPlayerNameByXuid(const std::string& xuid) {
     std::string playerName = LeviLaminaAPI::getPlayerNameByXuid(xuid);
     if (playerName.empty()) {
-        playerName = "Unknown";
+        playerName = xuid;  // 使用 xuid 作为 fallback
     }
+    return playerName;
+}
+
+std::string JsonLoader::getPlayerNameWithFallback(const std::string& xuid) {
+    // 1. 优先使用 API 获取玩家名称
+    std::string playerName = LeviLaminaAPI::getPlayerNameByXuid(xuid);
+
+    // 2. 如果 API 返回空，尝试从文件名读取
+    if (playerName.empty()) {
+        playerName = JsonLoader::getPlayerNameFromFileName(xuid);
+    }
+
+    // 3. 如果还是为空，使用 xuid 作为 fallback
+    if (playerName.empty()) {
+        playerName = xuid;
+    }
+
     return playerName;
 }
 
@@ -198,25 +215,59 @@ void JsonLoader::checkAndUpdatePlayerFileName(const std::string& xuid, const std
         return;
     }
 
-    // 检查文件名是否需要更新
-    bool wasRenamed = needsFileRename(xuid, currentPlayerName);
-    if (wasRenamed) {
-        // 更新文件名
+    ensureDirectoryExists(getLandsBaseDir());
+
+    // 检查是否需要创建新文件或重命名现有文件
+    bool hasFile = hasPlayerFile(xuid);
+    if (!hasFile) {
+        // 新玩家，创建空文件
+        createEmptyPlayerFile(xuid, currentPlayerName);
+    } else if (needsFileRename(xuid, currentPlayerName)) {
+        // 玩家改名，重命名文件
         renamePlayerFileIfNeeded(xuid, currentPlayerName);
-    }
 
-    // 更新内存中的映射（确保映射是最新的）
-    xuidToNameFromFiles[xuid] = currentPlayerName;
-
-    // 只有当文件名被更新时，才刷新所有相关的 LandInformation 对象的 ownerName
-    // 以保持与修改后的文件名一致
-    if (wasRenamed) {
+        // 刷新内存中的 ownerName
         auto allLands = DataService::getInstance()->getAllItems<LandData>();
         for (auto* landInfo : allLands) {
             if (landInfo->getOwnerXuid() == xuid) {
                 landInfo->refreshOwnerName();
             }
         }
+    }
+
+    // 更新内存映射
+    xuidToNameFromFiles[xuid] = currentPlayerName;
+}
+
+bool JsonLoader::hasPlayerFile(const std::string& xuid) {
+    auto playerFiles = scanPlayerFiles();
+    return std::ranges::any_of(playerFiles, [&xuid](const std::string& file) {
+        auto [parsedXuid, oldName] = parseFileName(file);
+        return parsedXuid == xuid;
+    });
+}
+
+void JsonLoader::createEmptyPlayerFile(const std::string& xuid, const std::string& playerName) {
+    std::string landsDir = getLandsBaseDir();
+    ensureDirectoryExists(landsDir);
+
+    std::string           fileName = generatePlayerFileName(xuid, playerName);
+    std::filesystem::path filePath = std::filesystem::path(landsDir) / fileName;
+
+    try {
+        nlohmann::json emptyJson = nlohmann::json::array();
+        std::ofstream  outFile = Utf8Utils::createUtf8OutputStream(filePath.string());
+        if (outFile.is_open()) {
+            outFile << emptyJson.dump(4);
+            outFile.close();
+            rlx_land::RLXLand::getInstance().getSelf().getLogger().info("Created empty land file for player: {}", fileName);
+        }
+    } catch (const std::exception& e) {
+        rlx_land::RLXLand::getInstance().getSelf().getLogger().error(
+            "Failed to create empty land file for player {}: {}",
+            fileName,
+            e.what()
+        );
     }
 }
 

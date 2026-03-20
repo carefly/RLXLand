@@ -1,5 +1,5 @@
 #include "BaseInformation.h"
-#include "common/LeviLaminaAPI.h"
+#include "common/JsonLoader.h"
 #include <algorithm>
 
 namespace rlx_land {
@@ -19,7 +19,7 @@ std::string BaseInformation::getMembers() const {
     std::string memberNames;
     for (size_t i = 0; i < dataRef->memberXuids.size(); ++i) {
         if (i > 0) memberNames += ",";
-        memberNames += LeviLaminaAPI::getPlayerNameByXuid(dataRef->memberXuids[i]);
+        memberNames += JsonLoader::getPlayerNameWithFallback(dataRef->memberXuids[i]);
     }
     return memberNames;
 }

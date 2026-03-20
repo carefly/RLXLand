@@ -1,5 +1,6 @@
 #include "mod/RLXLand.h"
-#include "common/ModConfig.h"
+#include "common/ConfigManager.hpp"
+#include "common/LandConfig.hpp"
 #include "data/core/PlayerEconomyData.h"
 #include "data/service/DataService.h"
 #include "mod/events/CommonEventHandlers.h"
@@ -20,11 +21,18 @@ bool RLXLand::load() const {
     // 加载配置文件
     getSelf().getLogger().info("RLXLand 模组开始加载");
 
-    ModConfig::load();
+    // 初始化配置系统
+    try {
+        rlx::common::Config<LandConfigData>::initWithName("land_config.json");
+        getSelf().getLogger().info("配置系统已初始化");
+    } catch (const std::exception& e) {
+        getSelf().getLogger().error("配置初始化失败：{}", e.what());
+        return false;
+    }
 
     // 检查 money DLL
-    bool dllExists     = ModConfig::checkMoneyDllExists();
-    bool requirePlugin = ModConfig::requireMoneyPlugin();
+    bool dllExists     = rlx::common::checkDllExists("RLXMoney.dll", {"plugins/RLXMoney", "../plugins/RLXMoney"});
+    bool requirePlugin = rlx_land::getLandConfig().requireMoneyPlugin;
 
     if (!dllExists) {
         if (requirePlugin) {
@@ -70,7 +78,7 @@ bool RLXLand::enable() const {
     CommonEventHandlers::hookAllFunctions();
     
     // 根据配置决定是否启用状态显示（侧边栏）
-    if (ModConfig::showSidebar()) {
+    if (rlx_land::getLandConfig().enableSidebar) {
         RLXStatus::getInstance().load();
         RLXStatus::getInstance().enable();
         getSelf().getLogger().info("侧边栏已启用");

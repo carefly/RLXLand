@@ -7,17 +7,17 @@ add_repositories("rlx-repo https://github.com/carefly/xmake-repo.git")
 -- add_repositories("rlx-repo ../xmake-repo")
 
 -- 使用 xmake-repo 中的 RLXMoney 包（从 GitHub releases 下载预编译 SDK）
-add_requires("rlxmoney 1.0.1", {configs = {shared = true}})
+add_requires("rlxmoney 1.9.8", {configs = {shared = true}})
 
 -- 本地私有包仓库，提供 rlxmoney
 -- add_repositories("local-packages packages")
 
 if is_config("target_type", "server") then
-    add_requires("levilamina 1.7.7", {configs = {target_type = "server"}})
+    add_requires("levilamina 1.9.8", {configs = {target_type = "server"}})
 else
-    add_requires("levilamina 1.7.7", {configs = {target_type = "client"}})
+    add_requires("levilamina 1.9.8", {configs = {target_type = "client"}})
 end
-
+ 
 add_requires("levibuildscript")
 add_requires("nlohmann_json")
 
@@ -57,8 +57,19 @@ target("RLXLand") -- Change this to your mod name.
     set_symbols("debug")
     add_headerfiles("src/**.h")
     add_files("src/**.cpp")
+    -- 排除已废弃的 ModConfig.cpp（改用 ConfigManager.hpp）
+    remove_files("src/common/ModConfig.cpp")
     add_includedirs("src")
     add_defines("RLX_MONEY_ENABLED")
+    if is_config("target_type", "server") then
+        add_defines("LL_PLAT_S")
+    --  add_includedirs("src-server")
+    --  add_files("src-server/**.cpp")
+    else
+        add_defines("LL_PLAT_C")
+    --  add_includedirs("src-client")
+    --  add_files("src-client/**.cpp")
+    end
 
 -- 新增测试目标
 if has_config("tests") then

@@ -1,5 +1,5 @@
 #include "plugin/RLXStatus.h"
-#include "common/ModConfig.h"
+#include "common/LandConfig.hpp"
 #include "common/RLXScoreboard.h"
 #include "data/service/DataService.h"
 #include "mod/RLXLand.h"
@@ -34,7 +34,7 @@ bool RLXStatus::disable() { return true; }
 
 void RLXStatus::oneTick() {
     // 检查配置：如果侧边栏被禁用，直接返回
-    if (!ModConfig::showSidebar()) {
+    if (!rlx_land::getLandConfig().enableSidebar) {
         return;
     }
 

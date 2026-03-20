@@ -1,6 +1,5 @@
 #include "LandCore.h"
 #include "common/JsonLoader.h"
-#include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include <format>
 
@@ -61,17 +60,7 @@ LandInformation::LandInformation(LandData ld) : BaseInformation(static_cast<Base
 bool LandInformation::checkIsOwner(const std::string& xuid) const { return landData.ownerXuid == xuid; }
 
 void LandInformation::refreshOwnerName() {
-    // 优先使用 API 获取玩家名称（适用于测试和生产环境）
-    std::string playerName = LeviLaminaAPI::getPlayerNameByXuid(landData.ownerXuid);
-    // 如果 API 返回空，尝试从文件名读取（用于从文件加载的情况）
-    if (playerName.empty()) {
-        playerName = JsonLoader::getPlayerNameFromFileName(landData.ownerXuid);
-    }
-    // 如果还是为空，使用 "Unknown" 作为 fallback
-    if (playerName.empty()) {
-        playerName = "Unknown";
-    }
-    setOwnerName(playerName);
+    setOwnerName(rlx_land::JsonLoader::getPlayerNameWithFallback(landData.ownerXuid));
 }
 
 void LandInformation::setOwnerXuid(const std::string& xuid) {

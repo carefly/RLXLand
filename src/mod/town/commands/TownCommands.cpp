@@ -26,10 +26,10 @@ namespace rlx_town {
 
 void TownCommands::registerCommands() {
     using ll::command::CommandRegistrar;
-    auto& townCommand = CommandRegistrar::getInstance().getOrCreateCommand("town", "城镇系统");
+    auto& townCommand = CommandRegistrar::getInstance(false).getOrCreateCommand("town", "城镇系统");
 
     // 注册腐竹专用命令，使用GameDirectors权限，普通玩家看不到
-    auto& opCommand = CommandRegistrar::getInstance()
+    auto& opCommand = CommandRegistrar::getInstance(false)
                           .getOrCreateCommand("townop", "腐竹城镇管理系统", CommandPermissionLevel::GameDirectors);
 
     // 基础命令（腐竹专用）

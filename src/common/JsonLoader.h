@@ -29,6 +29,9 @@ public:
     // 检查并更新玩家文件名（在玩家登录时调用）
     static void checkAndUpdatePlayerFileName(const std::string& xuid, const std::string& currentPlayerName);
 
+    // 统一的玩家名称获取方法（带 fallback 机制）
+    static std::string getPlayerNameWithFallback(const std::string& xuid);
+
 private:
     // 路径管理
     static std::string getLandsBaseDir();
@@ -53,6 +56,13 @@ private:
     static std::map<std::string, std::vector<LandData>> loadExistingPlayerData();
     static bool compareLandData(const std::vector<LandData>& oldData, const std::vector<LandData>& newData);
     static bool needsFileRename(const std::string& xuid, const std::string& currentName);
+
+public:
+    // 玩家文件管理辅助方法（用于测试）
+    static bool hasPlayerFile(const std::string& xuid);
+    static void createEmptyPlayerFile(const std::string& xuid, const std::string& playerName);
+
+private:
 };
 
 } // namespace rlx_land

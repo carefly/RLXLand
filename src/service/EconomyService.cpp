@@ -1,12 +1,18 @@
 #include "EconomyService.h"
 #include "data/core/PlayerEconomyData.h"
 #include "service/EconomyConfig.h"
+#include <optional>
 #include <string>
 
 namespace rlx_land {
 
 bool EconomyService::hasSufficientFunds(const std::string& xuid, int amount) {
-    return PlayerEconomyData::getPlayerMoney(xuid) >= amount;
+    // 如果金钱系统可用但获取不到余额，直接返回 false
+    auto balance = PlayerEconomyData::tryGetPlayerMoney(xuid);
+    if (!balance.has_value()) {
+        return false;
+    }
+    return balance.value() >= amount;
 }
 
 bool EconomyService::deductLandPurchaseFee(const std::string& xuid, int amount) {

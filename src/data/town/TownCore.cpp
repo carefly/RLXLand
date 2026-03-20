@@ -1,4 +1,5 @@
 #include "TownCore.h"
+#include "common/JsonLoader.h"
 #include "common/LeviLaminaAPI.h"
 #include "common/exceptions/LandExceptions.h"
 #include <format>
@@ -79,6 +80,10 @@ bool TownInformation::checkIsOwner(const std::string& xuid) const { return townD
 void TownInformation::setMayorXuid(const std::string& xuid) {
     townData.mayorXuid = xuid;
     setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(xuid));
+}
+
+void TownInformation::refreshOwnerName() {
+    setOwnerName(rlx_land::JsonLoader::getPlayerNameWithFallback(townData.mayorXuid));
 }
 
 // 验证当前数据的合法性

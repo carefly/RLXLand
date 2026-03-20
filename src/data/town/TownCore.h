@@ -80,7 +80,7 @@ public:
     void setMayorXuid(const std::string& xuid);
 
     // 重新初始化 ownerName（用于管理器）
-    void refreshOwnerName() { setOwnerName(LeviLaminaAPI::getPlayerNameByXuid(townData.mayorXuid)); }
+    void refreshOwnerName();
 
 protected:
     [[nodiscard]] bool checkIsOwner(const std::string& xuid) const override;

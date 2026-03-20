@@ -3,10 +3,11 @@
 #include "common/PlayerInfoUtils.h"
 #include "common/exceptions/LandExceptions.h"
 #include "data/service/DataService.h"
+#include "mod/land/permissions/LandPermissionChecker.h"
 #include "mod/town/Town.h"
 #include "service/EconomyService.h"
 #include "service/PermissionService.h"
-#include "mod/land/permissions/LandPermissionChecker.h"
+
 
 #include <basetsd.h>
 #include <ll/api/event/EventBus.h>
@@ -90,7 +91,7 @@ unordered_map<string, pair<int, int>> landBuyB;
 
 void LandCommands::registerCommands() {
     using ll::command::CommandRegistrar;
-    auto& landCommand = CommandRegistrar::getInstance().getOrCreateCommand("land", "领地");
+    auto& landCommand = CommandRegistrar::getInstance(false).getOrCreateCommand("land", "领地");
     landCommand.overload<LandBasicCommand>()
         .required("Operation")
         .execute([](CommandOrigin const& origin, CommandOutput& output, LandBasicCommand const& param, Command const&) {
