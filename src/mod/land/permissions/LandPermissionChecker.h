@@ -17,7 +17,7 @@ enum LandPerm : int {
     PERM_BUILD          = 8,
     PERM_POPITEM        = 16,
     PERM_INTERWITHACTOR = 32,
-    PERM_AMRORSTANDER   = 64,
+    PERM_ARMORSTANDER   = 64,
     PERM_FISHINGHOOK    = 128,
     PERM_FIRE           = 256
 };

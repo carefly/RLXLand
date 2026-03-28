@@ -44,6 +44,9 @@ public:
     // 检查 money DLL 是否可用
     static bool isMoneyDllAvailable();
 
+    // 检查经济系统是否启用（配置 + 插件双重检查）
+    static bool isEconomyEnabled();
+
     // 重置所有经济数据（主要用于测试）
     static void resetAllData();
 

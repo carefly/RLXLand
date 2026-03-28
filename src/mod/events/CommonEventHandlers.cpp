@@ -203,7 +203,7 @@ LL_TYPE_INSTANCE_HOOK(
     Player&                              player,
     ::SharedTypes::Legacy::EquipmentSlot slot
 ) {
-    if (LandPermissionChecker::hasPerm(&player, this->getPosition(), LandPerm::PERM_AMRORSTANDER)) {
+    if (LandPermissionChecker::hasPerm(&player, this->getPosition(), LandPerm::PERM_ARMORSTANDER)) {
         return origin(player, slot);
     } else {
         return false;

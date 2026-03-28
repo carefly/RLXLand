@@ -52,7 +52,7 @@ std::string LandPermissionChecker::showPerm(int perm, bool isOwner) {
         if (perm & LandPerm::PERM_BUILD) permStr += "建造 ";
         if (perm & LandPerm::PERM_POPITEM) permStr += "物品框操作 ";
         if (perm & LandPerm::PERM_INTERWITHACTOR) permStr += "实体交互 ";
-        if (perm & LandPerm::PERM_AMRORSTANDER) permStr += "盔甲架操作 ";
+        if (perm & LandPerm::PERM_ARMORSTANDER) permStr += "盔甲架操作 ";
         if (perm & LandPerm::PERM_FISHINGHOOK) permStr += "钓鱼竿 ";
         if (perm & LandPerm::PERM_FIRE) permStr += "火焰蔓延 ";
     }

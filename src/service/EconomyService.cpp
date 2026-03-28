@@ -7,6 +7,10 @@
 namespace rlx_land {
 
 bool EconomyService::hasSufficientFunds(const std::string& xuid, int amount) {
+    // 如果经济系统未启用，免费购买
+    if (!PlayerEconomyData::isEconomyEnabled()) {
+        return true;
+    }
     // 如果金钱系统可用但获取不到余额，直接返回 false
     auto balance = PlayerEconomyData::tryGetPlayerMoney(xuid);
     if (!balance.has_value()) {
@@ -16,6 +20,10 @@ bool EconomyService::hasSufficientFunds(const std::string& xuid, int amount) {
 }
 
 bool EconomyService::deductLandPurchaseFee(const std::string& xuid, int amount) {
+    // 如果经济系统未启用，不扣钱，直接返回成功
+    if (!PlayerEconomyData::isEconomyEnabled()) {
+        return true;
+    }
     return PlayerEconomyData::deductPlayerMoney(xuid, amount);
 }
 
@@ -27,6 +35,12 @@ void EconomyService::setInitialMoney(const std::string& xuid, int amount) {
 
 void EconomyService::addIncome(const std::string& xuid, int amount) { PlayerEconomyData::addPlayerMoney(xuid, amount); }
 
-int EconomyService::getLandPurchaseCost(int area) { return (area * EconomyConfig::LAND_PRICE_PER_BLOCK); }
+int EconomyService::getLandPurchaseCost(int area) {
+    // 如果经济系统未启用，土地免费
+    if (!PlayerEconomyData::isEconomyEnabled()) {
+        return 0;
+    }
+    return (area * EconomyConfig::LAND_PRICE_PER_BLOCK);
+}
 
 } // namespace rlx_land

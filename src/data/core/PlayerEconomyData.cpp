@@ -57,13 +57,17 @@ bool PlayerEconomyData::updateLocalCache(const std::string& xuid) {
 // ============================================================================
 
 void PlayerEconomyData::initialize() {
+    // 如果经济系统未启用，不初始化 RLXMoney 插件
+    if (!rlx_land::getLandConfig().enableEconomy) {
+        s_moneyDllAvailable = false;
+        defaultCurrencyId = "default";
+        return;
+    }
+
     s_moneyDllAvailable =
         rlx::common::checkDllExists("RLXMoney.dll", {"plugins/RLXMoney", "../plugins/RLXMoney"});
 
     if (!s_moneyDllAvailable) {
-        if (rlx_land::getLandConfig().requireMoneyPlugin) {
-            throw std::runtime_error("RLXMoney plugin is required but not found. Please install RLXMoney plugin.");
-        }
         defaultCurrencyId = "default";
         return;
     }
@@ -71,9 +75,6 @@ void PlayerEconomyData::initialize() {
     try {
         defaultCurrencyId = rlx_money::RLXMoneyAPI::getDefaultCurrencyId();
     } catch (const std::exception& e) {
-        if (rlx_land::getLandConfig().requireMoneyPlugin) {
-            throw std::runtime_error(std::format("RLXMoney plugin initialization failed: {}", e.what()));
-        }
         defaultCurrencyId   = "default";
         s_moneyDllAvailable = false;
     }
@@ -81,6 +82,10 @@ void PlayerEconomyData::initialize() {
 
 bool PlayerEconomyData::isMoneyDllAvailable() {
     return s_moneyDllAvailable;
+}
+
+bool PlayerEconomyData::isEconomyEnabled() {
+    return rlx_land::getLandConfig().enableEconomy && s_moneyDllAvailable;
 }
 
 void PlayerEconomyData::save() {
@@ -98,22 +103,21 @@ PlayerEconomyData::EconomyData& PlayerEconomyData::getPlayerEconomy(const std::s
     }
 
     // 新玩家：初始化数据
-    int initialMoney = rlx_land::getLandConfig().playerInitialMoney;
-
     if (!s_moneyDllAvailable) {
-        playerEconomyMap[xuid].money = initialMoney;
+        // 经济系统未启用或插件不可用，使用 0 金币
+        playerEconomyMap[xuid].money = 0;
         return playerEconomyMap[xuid];
     }
 
-    // DLL 模式：尝试获取或创建余额
+    // DLL 模式：从 RLXMoney 获取余额（不给初始金币，由 RLXMoney 管理）
     if (ensureCurrencyId()) {
         try {
             auto balance = rlx_money::RLXMoneyAPI::getBalance(xuid, defaultCurrencyId);
             if (balance.has_value()) {
                 playerEconomyMap[xuid].money = balance.value();
             } else {
-                rlx_money::RLXMoneyAPI::setBalance(xuid, defaultCurrencyId, initialMoney, "RLXLand初始化");
-                playerEconomyMap[xuid].money = initialMoney;
+                // RLXMoney 会自动给初始余额，这里直接返回 0
+                playerEconomyMap[xuid].money = 0;
             }
             return playerEconomyMap[xuid];
         } catch (const std::exception&) {
@@ -121,7 +125,7 @@ PlayerEconomyData::EconomyData& PlayerEconomyData::getPlayerEconomy(const std::s
         }
     }
 
-    playerEconomyMap[xuid].money = initialMoney;
+    playerEconomyMap[xuid].money = 0;
     return playerEconomyMap[xuid];
 }
 
@@ -156,9 +160,9 @@ int PlayerEconomyData::getPlayerMoney(const std::string& xuid) {
     if (balance.has_value()) {
         return balance.value();
     }
-    int initialMoney = rlx_land::getLandConfig().playerInitialMoney;
-    playerEconomyMap[xuid].money = initialMoney;
-    return initialMoney;
+    // 获取失败时返回 0，不再给初始金币
+    playerEconomyMap[xuid].money = 0;
+    return 0;
 }
 
 void PlayerEconomyData::setPlayerMoney(const std::string& xuid, int amount) {

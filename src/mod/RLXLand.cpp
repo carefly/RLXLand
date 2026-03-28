@@ -30,19 +30,22 @@ bool RLXLand::load() const {
         return false;
     }
 
-    // 检查 money DLL
-    bool dllExists     = rlx::common::checkDllExists("RLXMoney.dll", {"plugins/RLXMoney", "../plugins/RLXMoney"});
-    bool requirePlugin = rlx_land::getLandConfig().requireMoneyPlugin;
+    // 检查 money DLL 和经济系统配置
+    bool dllExists = rlx::common::checkDllExists("RLXMoney.dll", {"plugins/RLXMoney", "../plugins/RLXMoney"});
+    bool enableEconomy = rlx_land::getLandConfig().enableEconomy;
 
-    if (!dllExists) {
-        if (requirePlugin) {
-            getSelf().getLogger().error("必须安装 RLXMoney 插件但未找到，请安装 RLXMoney 插件。");
+    if (enableEconomy) {
+        if (!dllExists) {
+            getSelf().getLogger().error("经济系统已启用但未找到 RLXMoney 插件，请安装 RLXMoney 插件或在配置中禁用经济系统。");
             return false;
-        } else {
-            getSelf().getLogger().warn("未找到 RLXMoney 插件，将以本地模式运行（金币数据不会持久化）。");
         }
+        getSelf().getLogger().info("经济系统已启用，已找到 RLXMoney 插件。");
     } else {
-        getSelf().getLogger().info("已找到 RLXMoney 插件，将正常使用。");
+        if (dllExists) {
+            getSelf().getLogger().info("经济系统已禁用，RLXMoney 插件将被忽略。");
+        } else {
+            getSelf().getLogger().info("经济系统已禁用，土地免费申请。");
+        }
     }
 
     // 初始化玩家经济数据（会根据 DLL 可用性自动选择模式）
@@ -50,10 +53,10 @@ bool RLXLand::load() const {
         PlayerEconomyData::initialize();
     } catch (const std::exception& e) {
         getSelf().getLogger().error("初始化 PlayerEconomyData 失败：{}", e.what());
-        if (requirePlugin) {
+        if (enableEconomy) {
             return false;
         }
-        // 如果 DLL 是可选的，继续运行
+        // 如果经济系统未启用，继续运行
     }
 
 

@@ -11,22 +11,13 @@ struct LandConfigData {
     bool enableSidebar = true;
 
     // ===== 经济配置 =====
-    int playerInitialMoney = 100000;   // 玩家初始金钱
-
-    // ===== 其他配置 =====
-    bool requireMoneyPlugin = false;   // 是否强制要求 RLXMoney 插件
+    bool enableEconomy = true; // 是否启用经济系统（需要 RLXMoney 插件）
 };
 
 // 定义 JSON 序列化（nlohmann/json 宏）
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LandConfigData,
-    enableSidebar,
-    playerInitialMoney,
-    requireMoneyPlugin
-);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LandConfigData, enableSidebar, enableEconomy);
 
 /// @brief 获取领地配置的便捷访问函数（Header-only 单例模式）
-inline const LandConfigData& getLandConfig() {
-    return rlx::common::Config<LandConfigData>::getInstance().get();
-}
+inline const LandConfigData& getLandConfig() { return rlx::common::Config<LandConfigData>::getInstance().get(); }
 
 } // namespace rlx_land
