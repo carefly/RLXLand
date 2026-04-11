@@ -4,7 +4,7 @@
 
 **一个功能强大的 Minecraft 基岩版土地与城镇管理模组**
 
-[![LeviLamina](https://img.shields.io/badge/LeviLamina-1.9.8-blue)](https://github.com/LiteLDev/LeviLamina)
+[![LeviLamina](https://img.shields.io/badge/LeviLamina-26.10.4-blue)](https://github.com/LiteLDev/LeviLamina)
 [![License](https://img.shields.io/badge/License-CC0--1.0-lightgrey)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue)](https://github.com/LiteLDev/LeviLamina)
 
