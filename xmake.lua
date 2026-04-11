@@ -7,15 +7,15 @@ add_repositories("rlx-repo https://github.com/carefly/xmake-repo.git")
 -- add_repositories("rlx-repo ../xmake-repo")
 
 -- 使用 xmake-repo 中的 RLXMoney 包（从 GitHub releases 下载预编译 SDK）
-add_requires("rlxmoney 26.10.4", {configs = {shared = true}})
+add_requires("rlxmoney 26.10.5", {configs = {shared = true}})
 
 -- 本地私有包仓库，提供 rlxmoney
 -- add_repositories("local-packages packages")
 
 if is_config("target_type", "server") then
-    add_requires("levilamina 26.10.4", {configs = {target_type = "server"}})
+    add_requires("levilamina 26.10.5", {configs = {target_type = "server"}})
 else
-    add_requires("levilamina 26.10.4", {configs = {target_type = "client"}})
+    add_requires("levilamina 26.10.5", {configs = {target_type = "client"}})
 end
  
 add_requires("levibuildscript")
